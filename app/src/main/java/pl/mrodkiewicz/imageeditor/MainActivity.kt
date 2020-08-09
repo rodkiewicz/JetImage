@@ -53,11 +53,9 @@ class MainActivity : AppCompatActivity() {
         sheetBehavior = BottomSheetBehavior.from(bottom_sheet)
         sheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-
             }
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                Timber.d("heigth: ${bottomSheet.y}")
                 val params: ViewGroup.LayoutParams = imageView.getLayoutParams()
                 val params2: ViewGroup.LayoutParams = main_activity.getLayoutParams()
                 params.height = bottomSheet.y.roundToInt() - params2.height
