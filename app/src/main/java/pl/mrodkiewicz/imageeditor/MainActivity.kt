@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.select_image -> {
+                sheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
                 launchAskForPermissionThenImage()
                 true
             }
@@ -64,7 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         })
         sheetBehavior.isDraggable = true
-        sheetBehavior.peekHeight = 0
+        sheetBehavior.peekHeight = 100
     }
 
     private fun launchAskForPermissionThenImage() {
@@ -102,7 +103,6 @@ class MainActivity : AppCompatActivity() {
                                     var newBitmap = loadSnowFilterAsync(bitmap)
                                     withContext(Dispatchers.Main) {
                                         imageView.setImageBitmap(newBitmap)
-                                        sheetBehavior.peekHeight = 150
                                     }
                                 }
                             }

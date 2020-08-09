@@ -1,6 +1,7 @@
 package pl.mrodkiewicz.imageeditor
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.drawable.Drawable
@@ -20,6 +21,9 @@ class ZoomableImageView : AppCompatImageView {
     private val start = PointF()
     private val minScale = 0.8f
     private var maxScale = 10f
+    private var scale = 1f
+    private var lastKnownHeight = 1f
+    private var maxHeight = 0f
     private lateinit var matrix_array: FloatArray
     private lateinit var matrix_image: Matrix
     private var redundantXSpace = 0f
@@ -29,6 +33,7 @@ class ZoomableImageView : AppCompatImageView {
     private var bottom = 0f
     private var originalBitmapWidth = 0f
     private var originalBitmapHeight = 0f
+    private var firstRun = true
     private lateinit var mScaleDetector: ScaleGestureDetector
 
     constructor(context: Context) : super(context) {
@@ -49,7 +54,7 @@ class ZoomableImageView : AppCompatImageView {
 
     private fun init(context: Context) {
         super.setClickable(true)
-        Timber.d("HEHEH INTI")
+
         mScaleDetector = ScaleGestureDetector(context, ScaleListener())
         matrix_array = FloatArray(9)
         matrix_image = Matrix()
@@ -59,33 +64,41 @@ class ZoomableImageView : AppCompatImageView {
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val bmHeight = bmHeight
-        val bmWidth = bmWidth
-        val width: Float = measuredWidth.toFloat()
-        val height: Float = measuredHeight.toFloat()
-
-
-        var scale = 1f
-        if (bmWidth != 0) {
-            val widthPercentage = width / bmWidth
-            val heightPercentage = height / bmHeight
-            scale = Math.min(widthPercentage, heightPercentage)
-            if((bmHeight.toFloat() == height) && (bmWidth.toFloat() == width)){
-                scale == 1f
+        if(firstRun) {
+            val bmHeight = bmHeight
+            val bmWidth = bmWidth
+            val width: Float = measuredWidth.toFloat()
+            var height: Float = measuredHeight.toFloat()
+            if(lastKnownHeight < maxHeight){
+                height = maxHeight
             }
+
+            if (bmWidth != 0) {
+                val widthPercentage = width / bmWidth
+                val heightPercentage = height / bmHeight
+                scale = Math.min(widthPercentage, heightPercentage)
+                if ((bmHeight.toFloat() == height) && (bmWidth.toFloat() == width)) {
+                    scale == 1f
+                }
+            }
+            matrix_image.setScale(scale, scale)
+            saveScale = 1f
+            originalBitmapWidth = scale * bmWidth
+            originalBitmapHeight = scale * bmHeight
+
+            redundantYSpace = height - originalBitmapHeight
+            redundantXSpace = width - originalBitmapWidth
+            matrix_image.postTranslate(redundantXSpace / 2, redundantYSpace / 2)
+            imageMatrix = matrix_image
+            maxHeight = height
+            firstRun = false
+
+        }else{
+            redundantYSpace = measuredHeight.toFloat() - lastKnownHeight
+            matrix_image.postTranslate(redundantXSpace / 2, redundantYSpace /2)
+            imageMatrix = matrix_image
         }
-        Timber.d("scale: ${scale}")
-        matrix_image.setScale(scale, scale)
-        saveScale = 1f
-        originalBitmapWidth = scale * bmWidth
-        originalBitmapHeight = scale * bmHeight
-
-
-        redundantYSpace = height - originalBitmapHeight
-        redundantXSpace = width - originalBitmapWidth
-        matrix_image.postTranslate(redundantXSpace / 2, redundantYSpace / 2)
-
-        imageMatrix = matrix_image
+        lastKnownHeight =  measuredHeight.toFloat()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -108,7 +121,7 @@ class ZoomableImageView : AppCompatImageView {
                 mode = MODE.ZOOM
             }
             MotionEvent.ACTION_MOVE ->
-                if (mode == MODE.ZOOM || mode == MODE.DRAG && saveScale > minScale) {
+                if (mode != MODE.ZOOM && mode == MODE.DRAG) {
                     var deltaX = curr.x - last.x
                     var deltaY = curr.y - last.y
 
@@ -120,13 +133,10 @@ class ZoomableImageView : AppCompatImageView {
                     var limitY = false
 
                     if (scaleWidth < getWidth() && scaleHeight < getHeight()) {
-                        // don't do anything
-                    } else if (scaleWidth < getWidth()) {
-                        deltaX = 0f
-                        limitY = true
-                    } else if (scaleHeight < getHeight()) {
-                        deltaY = 0f
-                        limitX = true
+                    } else if (scaleWidth < width) {
+                        limitY = false
+                    } else if (scaleHeight < height) {
+                        limitX = false
                     } else if (curr.y > scaleHeight) {
                         limitX = true
                         limitY = false
@@ -162,6 +172,11 @@ class ZoomableImageView : AppCompatImageView {
         setImageMatrix(matrix_image)
         invalidate()
         return true
+    }
+
+    override fun setImageBitmap(bm: Bitmap?) {
+        super.setImageBitmap(bm)
+        firstRun = true
     }
 
     fun centerImage() {

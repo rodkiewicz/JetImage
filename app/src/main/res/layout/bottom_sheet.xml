@@ -5,14 +5,13 @@
     android:id="@+id/bottom_sheet"
     android:layout_width="match_parent"
     android:layout_height="300dp"
+
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="-30dp"
-        android:backgroundTint="#D1CDCD"
-        app:cardCornerRadius="16dp">
+        android:backgroundTint="#D1CDCD">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
