@@ -46,6 +46,10 @@ class MainActivity : AppCompatActivity() {
                 launchAskForPermissionThenImage()
                 true
             }
+            R.id.center_image -> {
+                imageView.centerImage()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }

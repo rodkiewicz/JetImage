@@ -3,7 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/center_image"
+        android:icon="@drawable/ic_center_24"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/select_image"
-        android:icon="@drawable/ic_baseline_add_a_photo_black_24"
+        android:icon="@drawable/ic_add_a_photo_24"
         app:showAsAction="always" />
 </menu>

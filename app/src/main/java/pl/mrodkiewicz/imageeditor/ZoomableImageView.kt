@@ -10,8 +10,8 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 import androidx.appcompat.widget.AppCompatImageView
-import timber.log.Timber
 import kotlin.math.abs
+import kotlin.math.min
 
 
 // thanks https://www.freshbytelabs.com/2018/12/how-to-create-zoomable-imageview-in.html
@@ -19,11 +19,10 @@ class ZoomableImageView : AppCompatImageView {
     private var mode = MODE.NONE
     private val last = PointF()
     private val start = PointF()
-    private val minScale = 0.8f
+    private var minScale = 1.0f
     private var maxScale = 10f
     private var scale = 1f
     private var lastKnownHeight = 1f
-    private var maxHeight = 0f
     private lateinit var matrix_array: FloatArray
     private lateinit var matrix_image: Matrix
     private var redundantXSpace = 0f
@@ -64,23 +63,15 @@ class ZoomableImageView : AppCompatImageView {
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        if(firstRun) {
-            val bmHeight = bmHeight
-            val bmWidth = bmWidth
+        if (firstRun) {
+            val bmHeight = bitmapHeight
+            val bmWidth = bitmapWidth
             val width: Float = measuredWidth.toFloat()
-            var height: Float = measuredHeight.toFloat()
-            if(lastKnownHeight < maxHeight){
-                height = maxHeight
-            }
-
+            val height: Float = measuredHeight.toFloat()
             if (bmWidth != 0) {
-                val widthPercentage = width / bmWidth
-                val heightPercentage = height / bmHeight
-                scale = Math.min(widthPercentage, heightPercentage)
-                if ((bmHeight.toFloat() == height) && (bmWidth.toFloat() == width)) {
-                    scale == 1f
-                }
+                calculateScale(bmWidth.toFloat(), bmHeight.toFloat(), width, height)
             }
+            minScale = scale
             matrix_image.setScale(scale, scale)
             saveScale = 1f
             originalBitmapWidth = scale * bmWidth
@@ -90,15 +81,13 @@ class ZoomableImageView : AppCompatImageView {
             redundantXSpace = width - originalBitmapWidth
             matrix_image.postTranslate(redundantXSpace / 2, redundantYSpace / 2)
             imageMatrix = matrix_image
-            maxHeight = height
             firstRun = false
 
-        }else{
-            redundantYSpace = measuredHeight.toFloat() - lastKnownHeight
-            matrix_image.postTranslate(redundantXSpace / 2, redundantYSpace /2)
+        } else {
+            matrix_image.postTranslate(redundantXSpace / 2, (measuredHeight.toFloat() - lastKnownHeight) / 2)
             imageMatrix = matrix_image
         }
-        lastKnownHeight =  measuredHeight.toFloat()
+        lastKnownHeight = measuredHeight.toFloat()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -169,7 +158,7 @@ class ZoomableImageView : AppCompatImageView {
             }
             MotionEvent.ACTION_POINTER_UP -> mode = MODE.NONE
         }
-        setImageMatrix(matrix_image)
+        imageMatrix = matrix_image
         invalidate()
         return true
     }
@@ -179,21 +168,13 @@ class ZoomableImageView : AppCompatImageView {
         firstRun = true
     }
 
-    fun centerImage() {
-        val bmHeight = bmHeight
-        val bmWidth = bmWidth
-        val width: Float = measuredWidth.toFloat()
-        val height: Float = measuredHeight.toFloat()
-        val scale = if (width > height) height / bmHeight else width / bmWidth
-        matrix_image.setScale(scale, scale)
-        saveScale = 1f
-        originalBitmapWidth = scale * bmWidth
-        originalBitmapHeight = scale * bmHeight
-
-        redundantYSpace = height - originalBitmapHeight
-        redundantXSpace = width - originalBitmapWidth
-        matrix_image.postTranslate(redundantXSpace / 2, redundantYSpace / 2)
-        imageMatrix = matrix_image
+    fun calculateScale(bitmapHeight: Float, bitmapWidth: Float, height: Float, width: Float) {
+        val widthPercentage = width / bitmapWidth
+        val heightPercentage = height / bitmapHeight
+        scale = min(widthPercentage, heightPercentage)
+        if ((bitmapHeight == height) && (bitmapWidth == width)) {
+            scale = 1f
+        }
     }
 
     private inner class ScaleListener : SimpleOnScaleGestureListener() {
@@ -228,13 +209,21 @@ class ZoomableImageView : AppCompatImageView {
         }
     }
 
+    fun centerImage(){
+        scale = minScale
+        matrix_image.setScale(scale, scale)
+        matrix_image.postTranslate(redundantXSpace / 2, (height - originalBitmapHeight) / 2)
+        saveScale = 1f
+        imageMatrix = matrix_image
+    }
 
-    private val bmWidth: Int
+
+    private val bitmapWidth: Int
         get() {
             val drawable: Drawable? = drawable
             return drawable?.intrinsicWidth ?: 0
         }
-    private val bmHeight: Int
+    private val bitmapHeight: Int
         get() {
             val drawable: Drawable? = drawable
             return drawable?.intrinsicHeight ?: 0
