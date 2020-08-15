@@ -64,17 +64,17 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
         sheetBehavior.isDraggable = true
         sheetBehavior.peekHeight = 100
         lifecycleScope.launch {
-            var red = seekBar_red.afterValueChangedFlow().debounce(100).collect {
+            var red = seekBar_red.afterValueChangedFlow().debounce(250).collect {
                 editorViewModel.updateFilter(it * 255 / 100, VALUE_UPDATED.RED)
             }
         }
         lifecycleScope.launch {
-            var green = seekBar_green.afterValueChangedFlow().debounce(100).collect {
+            var green = seekBar_green.afterValueChangedFlow().debounce(250).collect {
                 editorViewModel.updateFilter(it * 255 / 100, VALUE_UPDATED.GREEN)
             }
         }
         lifecycleScope.launch {
-            var blue = seekBar_blue.afterValueChangedFlow().debounce(100).collect {
+            var blue = seekBar_blue.afterValueChangedFlow().debounce(250).collect {
                 editorViewModel.updateFilter(it * 255 / 100, VALUE_UPDATED.BLUE)
             }
         }
