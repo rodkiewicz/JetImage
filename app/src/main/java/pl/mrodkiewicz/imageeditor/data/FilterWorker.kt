@@ -1,9 +1,7 @@
-package pl.mrodkiewicz.imageeditor
+package pl.mrodkiewicz.imageeditor.data
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import java.util.*
-
 
 
 var COLOR_MAX = 0xff
@@ -13,8 +11,6 @@ fun Bitmap.applyFilter(filter: Filter): Bitmap {
     val height = this.height
     val pixels = IntArray(width * height)
     this.getPixels(pixels, 0, width, 0, 0, width, height)
-
-    val random = Random()
 
     var R: Int
     var G: Int
@@ -31,12 +27,12 @@ fun Bitmap.applyFilter(filter: Filter): Bitmap {
             if(R < filter.red){
                 R = 0
             }
-//            if(G < filter.green){
-//                G = 0
-//            }
-//            if(B < filter.blue){
-//                B = 0
-//            }
+            if(G < filter.green){
+                G = 0
+            }
+            if(B < filter.blue){
+                B = 0
+            }
             pixels[index] = Color.rgb(R, G, B)
 //            threshHold = random.nextInt(COLOR_MAX)
 //            if (R > threshHold && G > threshHold && B > threshHold) {

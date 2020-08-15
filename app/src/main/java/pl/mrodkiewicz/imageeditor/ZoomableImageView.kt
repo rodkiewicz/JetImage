@@ -188,8 +188,8 @@ class ZoomableImageView : AppCompatImageView {
             val newScale = saveScale * scaleFactor
             if (newScale < maxScale && newScale > minScale) {
                 saveScale = newScale
-                val width = getWidth().toFloat()
-                val height = getHeight().toFloat()
+                val width = width.toFloat()
+                val height = height.toFloat()
                 right = originalBitmapWidth * saveScale - width
                 bottom = originalBitmapHeight * saveScale - height
                 val scaledBitmapWidth = originalBitmapWidth * saveScale
