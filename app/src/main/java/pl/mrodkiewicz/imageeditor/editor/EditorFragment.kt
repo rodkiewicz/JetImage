@@ -65,17 +65,17 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
         sheetBehavior.peekHeight = 100
         lifecycleScope.launch {
             var red = seekBar_red.afterValueChangedFlow().debounce(250).collect {
-                editorViewModel.updateFilter(it * 255 / 100, VALUE_UPDATED.RED)
+                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.RED)
             }
         }
         lifecycleScope.launch {
             var green = seekBar_green.afterValueChangedFlow().debounce(250).collect {
-                editorViewModel.updateFilter(it * 255 / 100, VALUE_UPDATED.GREEN)
+                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.GREEN)
             }
         }
         lifecycleScope.launch {
             var blue = seekBar_blue.afterValueChangedFlow().debounce(250).collect {
-                editorViewModel.updateFilter(it * 255 / 100, VALUE_UPDATED.BLUE)
+                editorViewModel.updateFilter(it.toFloat()  / 100, VALUE_UPDATED.BLUE)
             }
         }
 

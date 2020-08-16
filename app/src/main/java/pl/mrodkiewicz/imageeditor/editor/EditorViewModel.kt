@@ -12,27 +12,29 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pl.mrodkiewicz.imageeditor.data.CustomFilter
 import pl.mrodkiewicz.imageeditor.data.Filter
 import pl.mrodkiewicz.imageeditor.data.VALUE_UPDATED
 import pl.mrodkiewicz.imageeditor.data.applyFilter
+import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
 
 class EditorViewModel : ViewModel() {
 
+    private val filters = Channel<Filter>()
     private val _bitmap = MutableLiveData<Bitmap>()
     val bitmap: LiveData<Bitmap> = _bitmap
-    val filters = Channel<Filter>()
 
     private lateinit var originalBitmap: Bitmap
-    private var lastFilter = Filter()
+    private var lastFilter = CustomFilter()
 
     init {
         viewModelScope.launch {
             filters.consumeAsFlow().collect {
-                lastFilter = it
-                var newBitmap = loadFilterAsync(originalBitmap, it)
+                lastFilter = CustomFilter(it.matrix)
+                val newBitmap = loadFilterAsync(originalBitmap.copy(originalBitmap.config, true), it)
                 _bitmap.value = newBitmap
             }
         }
@@ -40,28 +42,28 @@ class EditorViewModel : ViewModel() {
 
     fun setBitmap(bitmap: Bitmap) {
         val out = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 6, out)
-        val decoded = BitmapFactory.decodeStream(ByteArrayInputStream(out.toByteArray()))
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        var decoded = BitmapFactory.decodeStream(ByteArrayInputStream(out.toByteArray()))
+        decoded = decoded.copy(decoded.config,true)
         originalBitmap = decoded
         _bitmap.value = decoded
     }
 
-    fun updateFilter(value: Int, updated: VALUE_UPDATED) {
+
+    fun updateFilter(value: Float, updated: VALUE_UPDATED) {
         when (updated) {
             VALUE_UPDATED.RED -> {
-                filters.offer(lastFilter.copy(red = value))
+                filters.offer(lastFilter.updateRed(1 - value))
             }
             VALUE_UPDATED.BLUE -> {
-                filters.offer(lastFilter.copy(blue = value))
+                filters.offer(lastFilter.updateBlue(1 - value))
 
             }
             VALUE_UPDATED.GREEN -> {
-                filters.offer(lastFilter.copy(green = value))
-
+                filters.offer(lastFilter.updateGreen(1 - value))
             }
             VALUE_UPDATED.HUE -> {
-                filters.offer(lastFilter.copy(hue = value))
-
+                filters.offer(lastFilter.updateRed(1 - value))
             }
         }
     }
@@ -70,4 +72,11 @@ class EditorViewModel : ViewModel() {
         withContext(Dispatchers.Default) {
             originalBitmap.applyFilter(filter)
         }
+
+
+    override fun onCleared() {
+        super.onCleared()
+        originalBitmap.recycle()
+        bitmap.value?.recycle()
+    }
 }
