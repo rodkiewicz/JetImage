@@ -8,11 +8,15 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
-    <pl.mrodkiewicz.imageeditor.ZoomableImageView
+    <com.otaliastudios.zoom.ZoomImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_anchorGravity="top"
+        app:minZoom="1"
+        app:transformation="centerInside"
+        app:transformationGravity="auto"
+        app:alignment="center"
         tools:srcCompat="@tools:sample/avatars" />
     <!-- Adding bottom sheet after main content -->
     <include layout="@layout/bottom_sheet_editor" />

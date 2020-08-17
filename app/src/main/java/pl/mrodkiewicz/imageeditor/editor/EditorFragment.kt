@@ -54,10 +54,6 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
             }
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                val params: ViewGroup.LayoutParams = imageView.getLayoutParams()
-                val params2: ViewGroup.LayoutParams = main_activity.getLayoutParams()
-                params.height = bottomSheet.y.roundToInt() - params2.height
-                main_activity.requestLayout()
             }
 
         })
@@ -141,7 +137,6 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
                 true
             }
             R.id.center_image -> {
-                imageView.centerImage()
                 true
             }
             else -> super.onOptionsItemSelected(item)
