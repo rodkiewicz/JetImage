@@ -8,5 +8,10 @@
     <fragment
         android:id="@+id/editorFragment"
         android:name="pl.mrodkiewicz.imageeditor.editor.EditorFragment"
-        android:label="EditorFragment" />
+        android:label="EditorFragment" >
+        <action
+            android:id="@+id/action_editorFragment_to_editor"
+            app:destination="@id/editor" />
+    </fragment>
+
 </navigation>

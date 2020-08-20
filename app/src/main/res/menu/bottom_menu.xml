@@ -3,10 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/navigation_filters"
         android:icon="@drawable/ic_filter_24"
-        android:title="Filter"
+        android:title="Filters"
         app:showAsAction="always|withText" />
     <item
+        android:id="@+id/navigation_adjust"
         android:icon="@drawable/ic_tune_24"
         android:title="Adjust"
         app:showAsAction="always|withText" />

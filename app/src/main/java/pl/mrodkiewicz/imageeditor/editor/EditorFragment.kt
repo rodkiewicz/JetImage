@@ -4,31 +4,32 @@ import android.Manifest
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.view.*
-import androidx.fragment.app.Fragment
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.drawable.toBitmap
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.ui.setupWithNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.android.synthetic.main.bottom_sheet_editor.*
+import kotlinx.android.synthetic.main.editor_sheet.*
 import kotlinx.android.synthetic.main.fragment_editor.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.launch
 import pl.mrodkiewicz.imageeditor.R
-import pl.mrodkiewicz.imageeditor.afterValueChangedFlow
 import pl.mrodkiewicz.imageeditor.checkIfGranted
-import pl.mrodkiewicz.imageeditor.data.Filter
-import pl.mrodkiewicz.imageeditor.data.VALUE_UPDATED
 import pl.mrodkiewicz.imageeditor.snackbar
-import timber.log.Timber
-import kotlin.math.roundToInt
+import pl.mrodkiewicz.imageeditor.toast
+
 
 @AndroidEntryPoint
 class EditorFragment : Fragment(R.layout.fragment_editor) {
@@ -38,42 +39,40 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setUpNavigation()
         initView()
         setHasOptionsMenu(true)
     }
+    private fun setUpNavigation() {
+        val navHostFragment =
+            childFragmentManager.findFragmentById(R.id.nav_host_fragment_editor) as NavHostFragment
 
+        navHostFragment?.let{
+            bottom_nav.setupWithNavController(navHostFragment.navController)
+        }
+
+    }
     private fun initView() {
         editorViewModel.bitmap.observe(viewLifecycleOwner, Observer {
             it?.let {
                 imageView.setImageBitmap(it)
             }
         })
-        sheetBehavior = BottomSheetBehavior.from(bottom_sheet)
-        sheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onStateChanged(bottomSheet: View, newState: Int) {
-            }
-
-            override fun onSlide(bottomSheet: View, slideOffset: Float) {
-            }
-
-        })
-        sheetBehavior.isDraggable = true
-        sheetBehavior.peekHeight = 100
-        lifecycleScope.launch {
-            var red = seekBar_red.afterValueChangedFlow().debounce(250).collect {
-                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.RED)
-            }
-        }
-        lifecycleScope.launch {
-            var green = seekBar_green.afterValueChangedFlow().debounce(250).collect {
-                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.GREEN)
-            }
-        }
-        lifecycleScope.launch {
-            var blue = seekBar_blue.afterValueChangedFlow().debounce(250).collect {
-                editorViewModel.updateFilter(it.toFloat()  / 100, VALUE_UPDATED.BLUE)
-            }
-        }
+//        lifecycleScope.launch {
+//            var red = seekBar_red.afterValueChangedFlow().debounce(250).collect {
+//                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.RED)
+//            }
+//        }
+//        lifecycleScope.launch {
+//            var green = seekBar_green.afterValueChangedFlow().debounce(250).collect {
+//                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.GREEN)
+//            }
+//        }
+//        lifecycleScope.launch {
+//            var blue = seekBar_blue.afterValueChangedFlow().debounce(250).collect {
+//                editorViewModel.updateFilter(it.toFloat()  / 100, VALUE_UPDATED.BLUE)
+//            }
+//        }
 
     }
 
@@ -132,7 +131,6 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.select_image -> {
-                sheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
                 launchAskForPermissionThenImage()
                 true
             }

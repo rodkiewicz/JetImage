@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_activity"
@@ -8,17 +8,32 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
+    <!-- Adding bottom sheet after main content -->
+
     <com.otaliastudios.zoom.ZoomImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_anchorGravity="top"
+        android:layout_height="0dp"
+        app:alignment="center"
+        app:layout_constraintBottom_toTopOf="@id/bottom_sheet_include"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:minZoom="1"
         app:transformation="centerInside"
         app:transformationGravity="auto"
-        app:alignment="center"
         tools:srcCompat="@tools:sample/avatars" />
-    <!-- Adding bottom sheet after main content -->
-    <include layout="@layout/bottom_sheet_editor" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    <include
+        android:id="@+id/bottom_sheet_include"
+        layout="@layout/editor_sheet"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        app:layout_constraintVertical_bias="1.0" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

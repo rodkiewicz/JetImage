@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/editor"
+    app:startDestination="@id/navigation_filters">
+
+    <fragment
+        android:id="@+id/navigation_filters"
+        android:name="pl.mrodkiewicz.imageeditor.editor.FiltersTabFragment"
+        android:label="fragment_filters"
+        tools:layout="@layout/fragment_filters" >
+        <action
+            android:id="@+id/action_filtersFragment_to_adjustFragment"
+            app:destination="@id/navigation_adjust" />
+    </fragment>
+    <fragment
+        android:id="@+id/navigation_adjust"
+        android:name="pl.mrodkiewicz.imageeditor.editor.AdjustTabFragment"
+        android:label="fragment_adjust"
+        tools:layout="@layout/fragment_adjust" >
+        <action
+            android:id="@+id/action_adjustFragment_to_filtersFragment"
+            app:destination="@id/navigation_filters" />
+    </fragment>
+</navigation>
