@@ -2,7 +2,6 @@ package pl.mrodkiewicz.imageeditor.editor
 
 import android.Manifest
 import android.graphics.Bitmap
-import android.graphics.ColorMatrix
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.Menu
@@ -12,52 +11,64 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.editor_sheet.*
 import kotlinx.android.synthetic.main.fragment_editor.*
 import pl.mrodkiewicz.imageeditor.R
+import pl.mrodkiewicz.imageeditor.checkIfGranted
 import pl.mrodkiewicz.imageeditor.snackbar
-import timber.log.Timber
 
 
-@AndroidEntryPoint
 class EditorFragment : Fragment(R.layout.fragment_editor) {
-    private val editorViewModel: EditorViewModel by activityViewModels()
+    private lateinit var sheetBehavior: BottomSheetBehavior<View>
+    private val editorViewModel: EditorViewModel by viewModels()
+    private lateinit var bitmap: Bitmap
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setUpNavigation()
-        editorViewModel.bitmap.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                Glide.with(this).load(it).into(imageView)
-            }
-        })
-        editorViewModel.progress.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                progressBar.progress = it
-            }
-        })
+        initView()
         setHasOptionsMenu(true)
     }
+
     private fun setUpNavigation() {
         val navHostFragment =
             childFragmentManager.findFragmentById(R.id.nav_host_fragment_editor) as NavHostFragment
 
-        navHostFragment.let{
+        navHostFragment?.let {
             bottom_nav.setupWithNavController(navHostFragment.navController)
         }
+
+    }
+
+    private fun initView() {
+        editorViewModel.bitmap.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                imageView.setImageBitmap(it)
+            }
+        })
+//        lifecycleScope.launch {
+//            var red = seekBar_red.afterValueChangedFlow().debounce(250).collect {
+//                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.RED)
+//            }
+//        }
+//        lifecycleScope.launch {
+//            var green = seekBar_green.afterValueChangedFlow().debounce(250).collect {
+//                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.GREEN)
+//            }
+//        }
+//        lifecycleScope.launch {
+//            var blue = seekBar_blue.afterValueChangedFlow().debounce(250).collect {
+//                editorViewModel.updateFilter(it.toFloat()  / 100, VALUE_UPDATED.BLUE)
+//            }
+//        }
 
     }
 
@@ -76,21 +87,23 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
                 askForImage.launch("image/*")
             } else {
                 snackbar("daj nosz mi uprawnienia").setAction(
-                    "RETRY"
-                ) { launchAskForPermissionThenImage() }.show()
+                    "RETRY",
+                    { launchAskForPermissionThenImage() }).show()
             }
         }
 
 
     private val askForImage =
         registerForActivityResult(ActivityResultContracts.GetContent()) { it ->
+            println(it)
             if (it != null) {
                 Glide.with(this).load(it).into(object : CustomTarget<Drawable>() {
                     override fun onResourceReady(
                         resource: Drawable,
                         transition: Transition<in Drawable>?
                     ) {
-                        editorViewModel.setBitmap(resource.toBitmap())
+                        bitmap = resource.toBitmap()
+                        editorViewModel.setBitmap(bitmap)
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {
@@ -106,7 +119,6 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
         }
 
 
-
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.main, menu)
     }
@@ -117,14 +129,10 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
                 launchAskForPermissionThenImage()
                 true
             }
-            R.id.reset_filter -> {
-                editorViewModel.resetFilter()
+            R.id.center_image -> {
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
-}
-fun Map<String, Boolean>.checkIfGranted(): Boolean {
-    return !(this.map { it.value }.contains(false))
 }
