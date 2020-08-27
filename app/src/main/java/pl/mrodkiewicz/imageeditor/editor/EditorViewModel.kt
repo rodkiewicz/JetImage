@@ -2,28 +2,27 @@ package pl.mrodkiewicz.imageeditor.editor
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ColorMatrix
+import android.graphics.Matrix
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import pl.mrodkiewicz.imageeditor.data.CustomFilter
-import pl.mrodkiewicz.imageeditor.data.Filter
-import pl.mrodkiewicz.imageeditor.data.VALUE_UPDATED
-import pl.mrodkiewicz.imageeditor.data.applyFilter
-import timber.log.Timber
+import pl.mrodkiewicz.imageeditor.data.*
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
+typealias ColorValue = Pair<VALUE_UPDATED, Float>
 
 class EditorViewModel : ViewModel() {
 
-    private val filters = Channel<Filter>()
+    val filters = Channel<Filter>()
     private val _bitmap = MutableLiveData<Bitmap>()
     val bitmap: LiveData<Bitmap> = _bitmap
 
@@ -34,7 +33,8 @@ class EditorViewModel : ViewModel() {
         viewModelScope.launch {
             filters.consumeAsFlow().collect {
                 lastFilter = CustomFilter(it.matrix)
-                val newBitmap = loadFilterAsync(originalBitmap.copy(originalBitmap.config, true), it)
+                val newBitmap =
+                    loadFilterAsync(originalBitmap.copy(originalBitmap.config, true), it)
                 _bitmap.value = newBitmap
             }
         }
@@ -44,28 +44,51 @@ class EditorViewModel : ViewModel() {
         val out = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
         var decoded = BitmapFactory.decodeStream(ByteArrayInputStream(out.toByteArray()))
-        decoded = decoded.copy(decoded.config,true)
+        decoded = decoded.copy(decoded.config, true)
         originalBitmap = decoded
         _bitmap.value = decoded
     }
 
-
-    fun updateFilter(value: Float, updated: VALUE_UPDATED) {
-        when (updated) {
-            VALUE_UPDATED.RED -> {
-                filters.offer(lastFilter.updateRed(1 - value))
+    fun getFilterValues(section: SECTION): List<ColorValue> {
+        return when (section) {
+            SECTION.RED -> {
+                return listOf(
+                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[0]),
+                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[1]),
+                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[2])
+                )
             }
-            VALUE_UPDATED.BLUE -> {
-                filters.offer(lastFilter.updateBlue(1 - value))
-
+            SECTION.GREEN -> {
+                return listOf(
+                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[5]),
+                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[6]),
+                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[7])
+                )
             }
-            VALUE_UPDATED.GREEN -> {
-                filters.offer(lastFilter.updateGreen(1 - value))
+            SECTION.BLUE -> {
+                return listOf(
+                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[10]),
+                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[11]),
+                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[12])
+                )
             }
-            VALUE_UPDATED.HUE -> {
-                filters.offer(lastFilter.updateRed(1 - value))
+            SECTION.ALPHA -> {
+                return listOf(
+                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[4]),
+                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[8]),
+                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[13])
+                )
             }
         }
+    }
+
+    fun updateFilter(value: Float, section: SECTION, updated_value: VALUE_UPDATED) {
+        filters.offer(
+            lastFilter.update(
+                FilterUtils().convertToMatrixIndex(section, updated_value),
+                value
+            )
+        )
     }
 
     private suspend fun loadFilterAsync(originalBitmap: Bitmap, filter: Filter): Bitmap =
@@ -78,5 +101,12 @@ class EditorViewModel : ViewModel() {
         super.onCleared()
         originalBitmap.recycle()
         bitmap.value?.recycle()
+    }
+
+    fun resetFilter() {
+        val colorMatrix = ColorMatrix()
+        colorMatrix.set(lastFilter.matrix)
+        colorMatrix.reset()
+        filters.offer(CustomFilter().apply { matrix = colorMatrix.array })
     }
 }

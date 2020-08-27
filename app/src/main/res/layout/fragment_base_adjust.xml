@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".editor.AdjustFragment">
 
 
-    <SeekBar
+    <com.google.android.material.slider.Slider
         android:id="@+id/base_seekBar_red"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:valueFrom="0.0"
+        android:valueTo="2.0"
         app:layout_constraintEnd_toEndOf="@+id/base_seekBar_red_title"
         app:layout_constraintStart_toStartOf="@+id/base_seekBar_red_title"
         app:layout_constraintTop_toBottomOf="@+id/base_seekBar_red_title" />
@@ -25,27 +27,7 @@
         android:text="Red"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/base_title" />
-
-    <View
-        android:id="@+id/divider"
-        android:layout_width="230dp"
-        android:layout_height="3dp"
-        android:layout_marginTop="8dp"
-        android:background="?android:attr/listDivider"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/base_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Fragment Filters"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider" />
 
     <TextView
         android:id="@+id/base_seekBar_green_title"
@@ -57,10 +39,12 @@
         app:layout_constraintStart_toStartOf="@+id/base_seekBar_red"
         app:layout_constraintTop_toBottomOf="@+id/base_seekBar_red" />
 
-    <SeekBar
+    <com.google.android.material.slider.Slider
         android:id="@+id/base_seekBar_green"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:valueFrom="0.0"
+        android:valueTo="2.0"
         app:layout_constraintEnd_toEndOf="@+id/base_seekBar_green_title"
         app:layout_constraintStart_toStartOf="@+id/base_seekBar_green_title"
         app:layout_constraintTop_toBottomOf="@+id/base_seekBar_green_title" />
@@ -75,10 +59,12 @@
         app:layout_constraintStart_toStartOf="@+id/base_seekBar_green"
         app:layout_constraintTop_toBottomOf="@+id/base_seekBar_green" />
 
-    <SeekBar
+    <com.google.android.material.slider.Slider
         android:id="@+id/base_seekBar_blue"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:valueFrom="0.0"
+        android:valueTo="2.0"
         app:layout_constraintEnd_toEndOf="@+id/base_seekBar_blue_title"
         app:layout_constraintStart_toStartOf="@+id/base_seekBar_blue_title"
         app:layout_constraintTop_toBottomOf="@+id/base_seekBar_blue_title" />

@@ -8,6 +8,6 @@ import android.view.ViewGroup
 import pl.mrodkiewicz.imageeditor.R
 
 
-class FiltersTabFragment : Fragment(R.layout.fragment_filters) {
+class FiltersFragment : Fragment(R.layout.fragment_filters) {
 
 }

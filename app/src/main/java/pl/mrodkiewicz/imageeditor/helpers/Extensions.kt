@@ -9,6 +9,7 @@ import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -35,25 +36,15 @@ fun Fragment.snackbar(message: String, duration: Int = Snackbar.LENGTH_SHORT): S
     return Snackbar.make(this.requireView(), message, duration)
 }
 
-fun SeekBar.afterValueChangedFlow(): Flow<Int> {
+fun Slider.afterValueChangedFlow(): Flow<Float> {
     return callbackFlow {
-        val watcher = object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                offer(progress)
+        val listener = object : Slider.OnChangeListener {
+            override fun onValueChange(slider: Slider, value: Float, fromUser: Boolean) {
+                offer(value)
             }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                // NO-OP
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                // NO-OP
-            }
-
         }
-
-        setOnSeekBarChangeListener(watcher)
-        awaitClose { setOnSeekBarChangeListener(null) }
+        addOnChangeListener(listener)
+        awaitClose { removeOnChangeListener(listener) }
     }
 }
 

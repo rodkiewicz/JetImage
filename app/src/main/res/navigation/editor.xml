@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/navigation_filters"
-        android:name="pl.mrodkiewicz.imageeditor.editor.FiltersTabFragment"
+        android:name="pl.mrodkiewicz.imageeditor.editor.FiltersFragment"
         android:label="fragment_filters"
         tools:layout="@layout/fragment_filters" >
         <action
@@ -16,7 +16,7 @@
     </fragment>
     <fragment
         android:id="@+id/navigation_adjust"
-        android:name="pl.mrodkiewicz.imageeditor.editor.AdjustTabFragment"
+        android:name="pl.mrodkiewicz.imageeditor.editor.AdjustFragment"
         android:label="fragment_adjust"
         tools:layout="@layout/fragment_adjust" >
         <action

@@ -2,6 +2,7 @@ package pl.mrodkiewicz.imageeditor.editor
 
 import android.Manifest
 import android.graphics.Bitmap
+import android.graphics.ColorMatrix
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.Menu
@@ -11,6 +12,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.findNavController
@@ -33,9 +35,7 @@ import pl.mrodkiewicz.imageeditor.toast
 
 @AndroidEntryPoint
 class EditorFragment : Fragment(R.layout.fragment_editor) {
-    private lateinit var sheetBehavior: BottomSheetBehavior<View>
-    private val editorViewModel: EditorViewModel by viewModels()
-    private lateinit var bitmap: Bitmap
+    private val editorViewModel: EditorViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -58,22 +58,6 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
                 imageView.setImageBitmap(it)
             }
         })
-//        lifecycleScope.launch {
-//            var red = seekBar_red.afterValueChangedFlow().debounce(250).collect {
-//                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.RED)
-//            }
-//        }
-//        lifecycleScope.launch {
-//            var green = seekBar_green.afterValueChangedFlow().debounce(250).collect {
-//                editorViewModel.updateFilter(it.toFloat() / 100, VALUE_UPDATED.GREEN)
-//            }
-//        }
-//        lifecycleScope.launch {
-//            var blue = seekBar_blue.afterValueChangedFlow().debounce(250).collect {
-//                editorViewModel.updateFilter(it.toFloat()  / 100, VALUE_UPDATED.BLUE)
-//            }
-//        }
-
     }
 
     private fun launchAskForPermissionThenImage() {
@@ -106,8 +90,7 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
                         resource: Drawable,
                         transition: Transition<in Drawable>?
                     ) {
-                        bitmap = resource.toBitmap()
-                        editorViewModel.setBitmap(bitmap)
+                        editorViewModel.setBitmap(resource.toBitmap())
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {
@@ -134,7 +117,8 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
                 launchAskForPermissionThenImage()
                 true
             }
-            R.id.center_image -> {
+            R.id.reset_filter -> {
+                editorViewModel.resetFilter()
                 true
             }
             else -> super.onOptionsItemSelected(item)

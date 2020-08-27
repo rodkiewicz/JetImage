@@ -8,8 +8,6 @@ fun Bitmap.applyFilter(filter: Filter): Bitmap {
     val canvas = Canvas(this)
     val paint = Paint()
     val colorMatrix = ColorMatrix()
-    colorMatrix.reset()
-    colorMatrix.setSaturation(0f)
     val matrix = filter.matrix
     colorMatrix.set(matrix)
     paint.colorFilter = ColorMatrixColorFilter(matrix)
