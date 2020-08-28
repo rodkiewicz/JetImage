@@ -1,7 +1,6 @@
 package pl.mrodkiewicz.imageeditor
 
 import org.junit.Test
-import pl.mrodkiewicz.imageeditor.data.FilterUtils
 import pl.mrodkiewicz.imageeditor.data.SECTION
 import pl.mrodkiewicz.imageeditor.data.VALUE_UPDATED
 

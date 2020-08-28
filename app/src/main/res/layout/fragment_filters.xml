@@ -8,15 +8,15 @@
 
 
     <SeekBar
-        android:id="@+id/base_seekBar_red"
+        android:id="@+id/base_seekBar_one"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_red_title"
-        app:layout_constraintStart_toStartOf="@+id/base_seekBar_red_title"
-        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_red_title" />
+        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_one_title"
+        app:layout_constraintStart_toStartOf="@+id/base_seekBar_one_title"
+        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_one_title" />
 
     <TextView
-        android:id="@+id/base_seekBar_red_title"
+        android:id="@+id/base_seekBar_one_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -48,40 +48,40 @@
         app:layout_constraintTop_toBottomOf="@+id/divider" />
 
     <TextView
-        android:id="@+id/base_seekBar_green_title"
+        android:id="@+id/base_seekBar_two_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Green"
-        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_red"
-        app:layout_constraintStart_toStartOf="@+id/base_seekBar_red"
-        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_red" />
+        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_one"
+        app:layout_constraintStart_toStartOf="@+id/base_seekBar_one"
+        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_one" />
 
     <SeekBar
-        android:id="@+id/base_seekBar_green"
+        android:id="@+id/base_seekBar_two"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_green_title"
-        app:layout_constraintStart_toStartOf="@+id/base_seekBar_green_title"
-        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_green_title" />
+        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_two_title"
+        app:layout_constraintStart_toStartOf="@+id/base_seekBar_two_title"
+        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_two_title" />
 
     <TextView
-        android:id="@+id/base_seekBar_blue_title"
+        android:id="@+id/base_seekBar_three_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Blue"
-        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_green"
-        app:layout_constraintStart_toStartOf="@+id/base_seekBar_green"
-        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_green" />
+        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_two"
+        app:layout_constraintStart_toStartOf="@+id/base_seekBar_two"
+        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_two" />
 
     <SeekBar
-        android:id="@+id/base_seekBar_blue"
+        android:id="@+id/base_seekBar_three"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_blue_title"
-        app:layout_constraintStart_toStartOf="@+id/base_seekBar_blue_title"
-        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_blue_title" />
+        app:layout_constraintEnd_toEndOf="@+id/base_seekBar_three_title"
+        app:layout_constraintStart_toStartOf="@+id/base_seekBar_three_title"
+        app:layout_constraintTop_toBottomOf="@+id/base_seekBar_three_title" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

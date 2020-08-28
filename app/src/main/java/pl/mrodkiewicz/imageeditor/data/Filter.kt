@@ -1,12 +1,11 @@
 package pl.mrodkiewicz.imageeditor.data
 
 
-interface Filter{
-    var matrix : FloatArray
-}
-enum class VALUE_UPDATED(var row: Int) {
-    RED(0), GREEN(1), BLUE(2)
-}
-enum class SECTION(var column: Int) {
-    RED(0),  GREEN(1), BLUE(2), ALPHA(3);
-}
+data class Filter(
+    var red: Int = 0,
+    var green: Int = 0,
+    var blue: Int = 0,
+    var hue: Int = 0,
+    var saturation: Int = 0,
+    var value: Int = 0
+)

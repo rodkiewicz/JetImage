@@ -1,21 +1,15 @@
 package pl.mrodkiewicz.imageeditor
 
 import android.app.Activity
-import android.content.Context
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.SeekBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.LifecycleCoroutineScope
 import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import timber.log.Timber
-import java.text.SimpleDateFormat
 
 fun Map<String, Boolean>.checkIfGranted(): Boolean {
     return !(this.map { it.value }.contains(false))

@@ -2,40 +2,39 @@ package pl.mrodkiewicz.imageeditor.editor
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.ColorMatrix
-import android.graphics.Matrix
+import android.graphics.Color
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ConflatedBroadcastChannel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import pl.mrodkiewicz.imageeditor.data.*
+import pl.mrodkiewicz.imageeditor.data.Filter
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
-typealias ColorValue = Pair<VALUE_UPDATED, Float>
 
 class EditorViewModel : ViewModel() {
 
     val filters = Channel<Filter>()
     private val _bitmap = MutableLiveData<Bitmap>()
+    private val _filter = MutableLiveData<Filter>()
     val bitmap: LiveData<Bitmap> = _bitmap
-
-    private lateinit var originalBitmap: Bitmap
-    private var lastFilter = CustomFilter()
+    val filter: LiveData<Filter> = _filter
+    private var originalBitmap: Bitmap
 
     init {
+        originalBitmap = Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888)
         viewModelScope.launch {
             filters.consumeAsFlow().collect {
-                lastFilter = CustomFilter(it.matrix)
                 val newBitmap =
-                    loadFilterAsync(originalBitmap.copy(originalBitmap.config, true), it)
+                    loadFilterAsync(originalBitmap,it)
                 _bitmap.value = newBitmap
+                _filter.value = it
             }
         }
     }
@@ -49,45 +48,16 @@ class EditorViewModel : ViewModel() {
         _bitmap.value = decoded
     }
 
-    fun getFilterValues(section: SECTION): List<ColorValue> {
-        return when (section) {
-            SECTION.RED -> {
-                return listOf(
-                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[0]),
-                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[1]),
-                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[2])
-                )
-            }
-            SECTION.GREEN -> {
-                return listOf(
-                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[5]),
-                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[6]),
-                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[7])
-                )
-            }
-            SECTION.BLUE -> {
-                return listOf(
-                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[10]),
-                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[11]),
-                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[12])
-                )
-            }
-            SECTION.ALPHA -> {
-                return listOf(
-                    Pair(VALUE_UPDATED.RED, lastFilter.matrix[4]),
-                    Pair(VALUE_UPDATED.GREEN, lastFilter.matrix[8]),
-                    Pair(VALUE_UPDATED.BLUE, lastFilter.matrix[13])
-                )
-            }
-        }
+
+    fun updateFilter(newFilter: Filter) {
+        filters.offer(
+            newFilter
+        )
     }
 
-    fun updateFilter(value: Float, section: SECTION, updated_value: VALUE_UPDATED) {
+    fun resetFilter(){
         filters.offer(
-            lastFilter.update(
-                FilterUtils().convertToMatrixIndex(section, updated_value),
-                value
-            )
+            Filter(red = 200, green = 10, hue = 1)
         )
     }
 
@@ -103,10 +73,28 @@ class EditorViewModel : ViewModel() {
         bitmap.value?.recycle()
     }
 
-    fun resetFilter() {
-        val colorMatrix = ColorMatrix()
-        colorMatrix.set(lastFilter.matrix)
-        colorMatrix.reset()
-        filters.offer(CustomFilter().apply { matrix = colorMatrix.array })
-    }
+
 }
+fun Bitmap.applyFilter(filter: Filter): Bitmap {
+    val width = this.width
+    val height = this.height
+    val pixels = IntArray(width * height)
+    this.getPixels(pixels, 0, width, 0, 0, width, height)
+    var index: Int
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            index = y * width + x
+            var r = Color.red(pixels[index])
+            var g = Color.green(pixels[index])
+            var b = Color.blue(pixels[index])
+            var hsv = floatArrayOf(0F,0F, 0F)
+            Color.RGBToHSV(r,g,b,hsv)
+
+        }
+    }
+    val bitmapOut = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+    bitmapOut.setPixels(pixels, 0, width, 0, 0, width, height)
+    return bitmapOut
+}
+
+
