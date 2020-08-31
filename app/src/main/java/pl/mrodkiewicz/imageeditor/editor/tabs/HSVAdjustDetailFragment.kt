@@ -16,15 +16,15 @@ class HSVAdjustDetailFragment : BaseAdjustDetailFragment(){
         base_seekBar_three.value = filter.value.fromHSVValue().toFloat()
     }
 
-    override fun handleSliderOneChange(value: Float): Filter? {
+    override fun handleSliderOneChange(value: Int): Filter? {
         return editorViewModel.filter.value?.copy(hue = value.toHSVHue())
     }
 
-    override fun handleSliderTwoChange(value: Float): Filter? {
+    override fun handleSliderTwoChange(value: Int): Filter? {
         return editorViewModel.filter.value?.copy(saturation = value.toHSVSaturation())
     }
 
-    override fun handleSliderThreeChange(value: Float): Filter? {
+    override fun handleSliderThreeChange(value: Int): Filter? {
         return editorViewModel.filter.value?.copy(value = value.toHSVValue())
     }
 

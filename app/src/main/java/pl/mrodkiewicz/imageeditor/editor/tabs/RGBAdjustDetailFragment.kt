@@ -18,15 +18,15 @@ class RGBAdjustDetailFragment : BaseAdjustDetailFragment(){
         base_seekBar_three.value = filter.blue.fromRGB().toFloat()
     }
 
-    override fun handleSliderOneChange(value: Float): Filter? {
+    override fun handleSliderOneChange(value: Int): Filter? {
         return editorViewModel.filter.value?.copy(red = value.toRGB())
     }
 
-    override fun handleSliderTwoChange(value: Float): Filter? {
+    override fun handleSliderTwoChange(value: Int): Filter? {
         return editorViewModel.filter.value?.copy(green = value.toRGB())
     }
 
-    override fun handleSliderThreeChange(value: Float): Filter? {
+    override fun handleSliderThreeChange(value: Int): Filter? {
         return editorViewModel.filter.value?.copy(blue = value.toRGB())
     }
     @InternalCoroutinesApi

@@ -4,11 +4,16 @@ import android.graphics.*
 import kotlinx.coroutines.channels.Channel
 import timber.log.Timber
 
+
+//
+
 fun Bitmap.applyFilter(filter: Filter, progress: Channel<Int>): Bitmap {
     val width = this.width
     val height = this.height
     val pixels = IntArray(width * height)
     val totalIndex = width*height
+    var step = totalIndex / 100
+    var _progress = 0
     this.getPixels(pixels, 0, width, 0, 0, width, height)
     var index: Int
     for (y in 0 until height) {
@@ -21,8 +26,9 @@ fun Bitmap.applyFilter(filter: Filter, progress: Channel<Int>): Bitmap {
             if(g > filter.green) g = 0
             if(b > filter.blue) b = 0
             pixels[index] = Color.rgb(r,g,b)
-            if(index%10==0 && index!=0){
-                progress.offer(totalIndex/index)
+            if(index == step){
+                progress.offer(++_progress)
+                step += totalIndex/100
             }
         }
     }

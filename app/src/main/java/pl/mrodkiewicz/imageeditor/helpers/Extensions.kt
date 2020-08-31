@@ -25,39 +25,39 @@ fun Slider.afterValueChangedFlow(): Flow<Float> {
 
 
 // HSV
-fun Float.toHSVValue(): Float {
+fun Int.toHSVValue(): Int {
     return this
 }
 
 
-fun Float.toHSVSaturation(): Float {
+fun Int.toHSVSaturation(): Int {
     return this
 }
 
 
-fun Float.fromHSVValue(): Int {
-    return this.roundToInt()
+fun Int.fromHSVValue(): Int {
+    return this
 }
 
-fun Float.fromHSVSaturation(): Int {
-    return this.roundToInt()
+fun Int.fromHSVSaturation(): Int {
+    return this
 }
 
-fun Float.toHSVHue(): Float {
-    return this / 359 * 100
+fun Int.toHSVHue(): Int {
+    return this
 }
 
-fun Float.fromHSVHue(): Int {
-    return (this / 100 * 359).roundToInt()
+fun Int.fromHSVHue(): Int {
+    return this
 }
 
 // RGB
-fun Float.toRGB(): Float {
-    return this / 100 * 255
+fun Int.toRGB(): Int {
+    return this
 }
 
-fun Float.fromRGB(): Int {
-    return (this / 255 * 100).roundToInt()
+fun Int.fromRGB(): Int {
+    return this
 }
 
 

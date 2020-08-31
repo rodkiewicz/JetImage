@@ -2,10 +2,10 @@ package pl.mrodkiewicz.imageeditor.data
 
 
 data class Filter(
-    var red: Float = 0F,
-    var green: Float = 0F,
-    var blue: Float = 0F,
-    var hue: Float = 0F,
-    var saturation: Float = 0F,
-    var value: Float = 0F
+    var red: Int = 0,
+    var green: Int = 0,
+    var blue: Int = 0,
+    var hue: Int = 0,
+    var saturation: Int = 0,
+    var value: Int = 0
 )

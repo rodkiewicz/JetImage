@@ -10,6 +10,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import pl.mrodkiewicz.imageeditor.data.Filter
 import pl.mrodkiewicz.imageeditor.data.applyFilter
 import timber.log.Timber
@@ -22,7 +23,8 @@ class EditorViewModel : ViewModel() {
     private val _bitmap = MutableLiveData<Bitmap>()
     private val _filter = MutableLiveData<Filter>(Filter())
     private val _progress = MutableLiveData<Int>(0)
-    private lateinit var  progressChannel : Channel<Int>
+    private lateinit var progressChannel: Channel<Int>
+    private lateinit var filterChannel: Channel<Filter>
     val bitmap: LiveData<Bitmap> = _bitmap
     val progress: LiveData<Int> = _progress
     val filter: LiveData<Filter> = _filter
@@ -39,6 +41,22 @@ class EditorViewModel : ViewModel() {
                 Timber.d("progress: ${it}")
             }
         }
+        filterChannel = Channel<Filter>()
+        viewModelScope.launch {
+            filterChannel.consumeAsFlow().distinctUntilChanged().collect {
+                withContext(Dispatchers.Default) {
+                    resetJob()
+                    bitmapJob = async {
+                        Timber.d("filter: ${it}")
+                        originalBitmap.applyFilter(it, progressChannel)
+                    }
+                    val newBitamp = bitmapJob.await()
+                    withContext(Dispatchers.Main) {
+                        _bitmap.value = newBitamp
+                    }
+                }
+            }
+        }
     }
 
     fun setBitmap(bitmap: Bitmap) {
@@ -52,23 +70,12 @@ class EditorViewModel : ViewModel() {
 
 
     fun updateFilter(newFilter: Filter) {
-        viewModelScope.launch {
-            withContext(Dispatchers.Default) {
-                resetJob()
-                bitmapJob = async {
-                    originalBitmap.applyFilter(newFilter, progressChannel)
-                }
-                val newBitamp = bitmapJob.await()
-                withContext(Dispatchers.Main) {
-                    _bitmap.value = newBitamp
-                    _filter.value = newFilter
-                }
-            }
-        }
+        _filter.value = newFilter
+        filterChannel.offer(newFilter)
     }
 
     fun resetFilter() {
-        _filter.value = Filter(red = 255f, green = 255f, blue = 255f)
+        _filter.value = Filter(red = 255, green = 255, blue = 255)
     }
 
     fun resetJob() {
