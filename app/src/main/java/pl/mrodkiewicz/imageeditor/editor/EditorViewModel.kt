@@ -2,39 +2,41 @@ package pl.mrodkiewicz.imageeditor.editor
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import pl.mrodkiewicz.imageeditor.data.Filter
+import pl.mrodkiewicz.imageeditor.data.applyFilter
+import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
 
 class EditorViewModel : ViewModel() {
 
-    val filters = Channel<Filter>()
     private val _bitmap = MutableLiveData<Bitmap>()
-    private val _filter = MutableLiveData<Filter>()
+    private val _filter = MutableLiveData<Filter>(Filter())
+    private val _progress = MutableLiveData<Int>(0)
+    private lateinit var  progressChannel : Channel<Int>
     val bitmap: LiveData<Bitmap> = _bitmap
+    val progress: LiveData<Int> = _progress
     val filter: LiveData<Filter> = _filter
     private var originalBitmap: Bitmap
+    private lateinit var bitmapJob: Deferred<Bitmap>
 
     init {
-        originalBitmap = Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888)
+        originalBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        _filter.value = Filter()
+        progressChannel = Channel<Int>()
         viewModelScope.launch {
-            filters.consumeAsFlow().collect {
-                val newBitmap =
-                    loadFilterAsync(originalBitmap,it)
-                _bitmap.value = newBitmap
-                _filter.value = it
+            progressChannel.consumeAsFlow().collect {
+                _progress.value = it
+                Timber.d("progress: ${it}")
             }
         }
     }
@@ -50,21 +52,31 @@ class EditorViewModel : ViewModel() {
 
 
     fun updateFilter(newFilter: Filter) {
-        filters.offer(
-            newFilter
-        )
-    }
-
-    fun resetFilter(){
-        filters.offer(
-            Filter(red = 200, green = 10, hue = 1)
-        )
-    }
-
-    private suspend fun loadFilterAsync(originalBitmap: Bitmap, filter: Filter): Bitmap =
-        withContext(Dispatchers.Default) {
-            originalBitmap.applyFilter(filter)
+        viewModelScope.launch {
+            withContext(Dispatchers.Default) {
+                resetJob()
+                bitmapJob = async {
+                    originalBitmap.applyFilter(newFilter, progressChannel)
+                }
+                val newBitamp = bitmapJob.await()
+                withContext(Dispatchers.Main) {
+                    _bitmap.value = newBitamp
+                    _filter.value = newFilter
+                }
+            }
         }
+    }
+
+    fun resetFilter() {
+        _filter.value = Filter(red = 255f, green = 255f, blue = 255f)
+    }
+
+    fun resetJob() {
+        if (::bitmapJob.isInitialized) {
+            bitmapJob.cancel("Reset job")
+            Timber.d("resetJob")
+        }
+    }
 
 
     override fun onCleared() {
@@ -73,28 +85,7 @@ class EditorViewModel : ViewModel() {
         bitmap.value?.recycle()
     }
 
-
 }
-fun Bitmap.applyFilter(filter: Filter): Bitmap {
-    val width = this.width
-    val height = this.height
-    val pixels = IntArray(width * height)
-    this.getPixels(pixels, 0, width, 0, 0, width, height)
-    var index: Int
-    for (y in 0 until height) {
-        for (x in 0 until width) {
-            index = y * width + x
-            var r = Color.red(pixels[index])
-            var g = Color.green(pixels[index])
-            var b = Color.blue(pixels[index])
-            var hsv = floatArrayOf(0F,0F, 0F)
-            Color.RGBToHSV(r,g,b,hsv)
 
-        }
-    }
-    val bitmapOut = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-    bitmapOut.setPixels(pixels, 0, width, 0, 0, width, height)
-    return bitmapOut
-}
 
 

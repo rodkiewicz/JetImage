@@ -17,7 +17,7 @@ import pl.mrodkiewicz.imageeditor.data.Filter
 import pl.mrodkiewicz.imageeditor.editor.EditorViewModel
 
 
-const val DEBOUNCE = 250L
+const val DEBOUNCE = 25L
 
 enum class MODE {
     RGB, HSV
@@ -29,13 +29,15 @@ abstract class BaseAdjustDetailFragment : Fragment(R.layout.fragment_base_adjust
     @FlowPreview
     @InternalCoroutinesApi
     fun setup() {
-        editorViewModel.filter.observe(this, Observer {
+        editorViewModel.filter.observe(viewLifecycleOwner, Observer {
             syncSliders(it)
         })
 
         lifecycleScope.launch {
             base_seekBar_one.afterValueChangedFlow().debounce(DEBOUNCE).collect {
-                handleSliderOneChange(it)?.let { it -> editorViewModel.updateFilter(it) }
+                handleSliderOneChange(it)?.let {
+                        it -> editorViewModel.updateFilter(it)
+                }
             }
         }
         lifecycleScope.launch {

@@ -5,27 +5,27 @@ import android.view.View
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_base_adjust.*
 import kotlinx.coroutines.InternalCoroutinesApi
+import pl.mrodkiewicz.imageeditor.*
 import pl.mrodkiewicz.imageeditor.data.Filter
-import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class HSVAdjustDetailFragment : BaseAdjustDetailFragment(){
     override fun syncSliders(filter: Filter) {
-        base_seekBar_one.value = filter.hue.toFloat()
-        base_seekBar_two.value = filter.saturation.toFloat()
-        base_seekBar_three.value = filter.value.toFloat()
+        base_seekBar_one.value = filter.hue.fromHSVHue().toFloat()
+        base_seekBar_two.value = filter.saturation.fromHSVSaturation().toFloat()
+        base_seekBar_three.value = filter.value.fromHSVValue().toFloat()
     }
 
     override fun handleSliderOneChange(value: Float): Filter? {
-        return editorViewModel.filter.value?.copy(hue = value.roundToInt())
+        return editorViewModel.filter.value?.copy(hue = value.toHSVHue())
     }
 
     override fun handleSliderTwoChange(value: Float): Filter? {
-        return editorViewModel.filter.value?.copy(saturation = value.roundToInt())
+        return editorViewModel.filter.value?.copy(saturation = value.toHSVSaturation())
     }
 
     override fun handleSliderThreeChange(value: Float): Filter? {
-        return editorViewModel.filter.value?.copy(value = value.roundToInt())
+        return editorViewModel.filter.value?.copy(value = value.toHSVValue())
     }
 
     @InternalCoroutinesApi
@@ -37,3 +37,5 @@ class HSVAdjustDetailFragment : BaseAdjustDetailFragment(){
         setup()
     }
 }
+
+

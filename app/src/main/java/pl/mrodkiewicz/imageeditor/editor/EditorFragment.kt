@@ -28,9 +28,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.editor_sheet.*
 import kotlinx.android.synthetic.main.fragment_editor.*
 import pl.mrodkiewicz.imageeditor.R
-import pl.mrodkiewicz.imageeditor.checkIfGranted
 import pl.mrodkiewicz.imageeditor.snackbar
-import pl.mrodkiewicz.imageeditor.toast
+import timber.log.Timber
 
 
 @AndroidEntryPoint
@@ -40,24 +39,26 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setUpNavigation()
-        initView()
+        editorViewModel.bitmap.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                Glide.with(this).load(it).into(imageView)
+            }
+        })
+        editorViewModel.progress.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                progressBar.progress = it
+            }
+        })
         setHasOptionsMenu(true)
     }
     private fun setUpNavigation() {
         val navHostFragment =
             childFragmentManager.findFragmentById(R.id.nav_host_fragment_editor) as NavHostFragment
 
-        navHostFragment?.let{
+        navHostFragment.let{
             bottom_nav.setupWithNavController(navHostFragment.navController)
         }
 
-    }
-    private fun initView() {
-        editorViewModel.bitmap.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                imageView.setImageBitmap(it)
-            }
-        })
     }
 
     private fun launchAskForPermissionThenImage() {
@@ -75,15 +76,14 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
                 askForImage.launch("image/*")
             } else {
                 snackbar("daj nosz mi uprawnienia").setAction(
-                    "RETRY",
-                    { launchAskForPermissionThenImage() }).show()
+                    "RETRY"
+                ) { launchAskForPermissionThenImage() }.show()
             }
         }
 
 
     private val askForImage =
         registerForActivityResult(ActivityResultContracts.GetContent()) { it ->
-            println(it)
             if (it != null) {
                 Glide.with(this).load(it).into(object : CustomTarget<Drawable>() {
                     override fun onResourceReady(
@@ -124,4 +124,7 @@ class EditorFragment : Fragment(R.layout.fragment_editor) {
             else -> super.onOptionsItemSelected(item)
         }
     }
+}
+fun Map<String, Boolean>.checkIfGranted(): Boolean {
+    return !(this.map { it.value }.contains(false))
 }
