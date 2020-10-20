@@ -1,5 +1,6 @@
 package pl.mrodkiewicz.imageeditor
 
+import androidx.renderscript.Matrix3f
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 
@@ -20,5 +21,13 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("pl.mrodkiewicz.imageeditor", appContext.packageName)
+    }
+    @Test
+    fun checkMatrixPercentage(){
+        var input = Matrix3f(
+            floatArrayOf(.393f, .349f, .272f,
+                .769f, .686f, .534f,
+                .189f, .168f, .131f)
+        )
     }
 }

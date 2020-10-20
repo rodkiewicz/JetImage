@@ -1,4 +1,4 @@
-package rodkiewicz.carjournal.helpers
+package pl.mrodkiewicz.imageeditor.helpers
 
 import android.content.Context
 import android.net.Uri

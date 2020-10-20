@@ -1,4 +1,4 @@
-package pl.mrodkiewicz.imageeditor
+package pl.mrodkiewicz.imageeditor.helpers
 
 @Suppress("unused")
 class Const {

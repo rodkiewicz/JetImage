@@ -1,4 +1,4 @@
-package pl.mrodkiewicz.imageeditor
+package pl.mrodkiewicz.imageeditor.helpers
 
 import android.content.ContentValues
 import android.content.Context

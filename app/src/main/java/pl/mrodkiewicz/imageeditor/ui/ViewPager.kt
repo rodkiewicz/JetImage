@@ -3,7 +3,6 @@ package pl.mrodkiewicz.imageeditor.ui
 import androidx.compose.animation.animate
 import androidx.compose.animation.core.AnimationClockObservable
 import androidx.compose.foundation.Box
-import androidx.compose.foundation.ContentGravity
 import androidx.compose.foundation.gestures.rememberScrollableController
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.runtime.*
@@ -13,7 +12,7 @@ import androidx.compose.ui.gesture.doubleTapGestureFilter
 import androidx.compose.ui.gesture.longPressGestureFilter
 import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
 import androidx.compose.ui.unit.Density
-import timber.log.Timber
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 
@@ -24,7 +23,7 @@ import kotlin.math.roundToInt
 
 class PagerState(
     clock: AnimationClockObservable,
-    currentPage: Int = 0,
+    currentPage: Int = 2,
     minPage: Int = 0,
     maxPage: Int = 0
 ) {
@@ -50,6 +49,8 @@ class PagerState(
         set(value) {
             _currentPage = value.coerceIn(minPage, maxPage)
         }
+
+
     var pageWidth = 0
     private var _currentOffset by mutableStateOf(0f)
     var currentOffset: Float
@@ -69,15 +70,17 @@ private val Measurable.page: Int
     get() = (parentData as? PageData)?.page ?: error("no PageData for measurable $this")
 
 @Composable
-public fun Pager(
+fun Pager(
     state: PagerState,
     offscreenLimit: Int = 10,
     modifier: Modifier = Modifier,
-    pageContent: @Composable PagerScope.() -> Unit
+    onValueChange: (Int, Float) -> Unit,
+    pageContent: @Composable() (PagerScope.() -> Unit),
 ) {
     var pageSize by remember { mutableStateOf(0) }
-    val visibility = remember { mutableStateOf(true) }
-    val opacity = animate(if (visibility.value) 0f else 1f)
+    val visibility = remember { mutableStateOf(false) }
+    val opacity = animate(if (visibility.value) 1f else 0f)
+
     Layout(
         children = {
             val minPage = (state.currentPage - offscreenLimit).coerceAtLeast(state.minPage)
@@ -87,7 +90,7 @@ public fun Pager(
                 val pageData = PageData(page)
                 val scope = PagerScope(state, page)
                 key(pageData) {
-                    Box(gravity = ContentGravity.Center, modifier = pageData) {
+                    Box(gravity = Alignment.Center, modifier = pageData) {
                         scope.pageContent()
                     }
                 }
@@ -103,12 +106,20 @@ public fun Pager(
             }
             .drawOpacity(opacity = opacity)
             .scrollable(Orientation.Horizontal, rememberScrollableController {
-                state.currentOffset += it
-                it
+                if (visibility.value) {
+                    state.currentOffset += it
+                    it
+                } else {
+                    0f
+                }
             }).scrollable(
                 orientation = Orientation.Vertical, rememberScrollableController {
-                    Timber.d("scroll ${it}")
-                    it
+                    if (visibility.value) {
+                        onValueChange.invoke(state.currentPage, it)
+                        it
+                    } else {
+                        0f
+                    }
                 }
             )
 
@@ -151,6 +162,13 @@ class PagerScope(
     fun Modifier.scalePagerItems(
     ): Modifier = Modifier.drawWithContent {
         drawContent()
-    }.drawOpacity(if (currentPage == page) 1f else 0.7f)
+    }.drawOpacity(currentPage.distanceToOpacity(page))
 
+}
+
+fun Int.distanceToOpacity(page: Int): Float {
+    return when (abs(this - page)) {
+        0 -> return 1f
+        else -> 0.5f
+    }
 }

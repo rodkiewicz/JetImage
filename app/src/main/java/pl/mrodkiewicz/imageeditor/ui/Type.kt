@@ -1,6 +1,7 @@
 package pl.mrodkiewicz.imageeditor.ui
 
 import androidx.compose.material.Typography
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.sp
@@ -26,6 +27,16 @@ public val typography = Typography(
     body1 = TextStyle(
         fontFamily = latoBold,
         fontSize = 18.sp
+    ),
+    caption = TextStyle(
+        color = Color.White,
+        fontFamily = latoRegular,
+        fontSize = 22.sp
+    ),
+    subtitle1 =  TextStyle(
+        color = Color.White,
+        fontFamily = latoLight,
+        fontSize = 20.sp
     )
     /* Other default text styles to override
 button = TextStyle(
