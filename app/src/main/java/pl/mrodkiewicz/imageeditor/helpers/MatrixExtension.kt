@@ -4,26 +4,6 @@ import androidx.renderscript.Matrix3f
 import timber.log.Timber
 
 
-var nonFilteredArray =
-    floatArrayOf(
-        1f, 0f, 0f,
-        0f, 1f, 0f,
-        0f, 0f, 1f
-    )
-
-var darkArray =
-    floatArrayOf(
-        0f, 0f, 0f,
-        0f, 0f, 0f,
-        0f, 0f, 0f
-    )
-var sepiaArray =
-    floatArrayOf(
-        .393f, .349f, .272f,
-        .769f, .686f, .534f,
-        .189f, .168f, .131f
-    )
-
 //if percentage is 0 the filter intensity is 0
 fun Matrix3f.serPercentageForMatrix(percentage: Int) {
     this.array[0] = this.array[0].getPercentageFromOne(percentage)

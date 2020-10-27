@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +20,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageAsset
 import androidx.compose.ui.platform.AnimationClockAmbient
 import androidx.compose.ui.platform.setContent
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,7 +45,8 @@ class MainActivity : AppCompatActivity() {
                 R.drawable.abc
             )
         )
-        mainViewModel.filters.observe(this) {
+
+        mainViewModel.bitmap.observe(this) {
             setContent {
                 ImageEditorTheme {
                     MainScreen(mainViewModel)
@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
     fun MainView(mainViewModel: MainViewModel) {
         val clock = AnimationClockAmbient.current
         val pagerState = remember(clock) { PagerState(clock) }
-        val filters: List<Filter> by mainViewModel.filters.observeAsState(default_filters)
+        val filters =  mainViewModel.filters.value
         Stack {
             Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
                 mainViewModel.bitmap.value?.let { ImagePreview(it) }
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun ImagePreview(bitmap: Bitmap) {
         Image(
-            modifier = Modifier.fillMaxHeight().fillMaxWidth()
+            modifier = Modifier
                 .background(Color.Black), asset = bitmap.asImageAsset()
         )
     }
@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                 state = pagerState,
                 modifier = modifier,
                 onValueChange = { index, value ->
-                    mainViewModel.updateFilter(index, value)
+                    mainViewModel.updateFilter(index, (value).toInt())
                 }
             ) {
                 FollowedPodcastCarouselItem(
@@ -153,7 +153,7 @@ class MainActivity : AppCompatActivity() {
                             .align(Alignment.CenterHorizontally)
                     )
                     Text(
-                        text = (filter.value / 100).toString(),
+                        text = (filter.value).toString(),
                         style = MaterialTheme.typography.subtitle1,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
