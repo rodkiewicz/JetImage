@@ -4,17 +4,7 @@ import androidx.renderscript.Matrix3f
 
 
 //if percentage is 0 the filter intensity is 0
-public fun Matrix3f.serPercentageForMatrix(percentage: Int) {
-    this.array[0] = this.array[0].getPercentageFromOne(percentage)
-    this.array[1] = this.array[1].getPercentageFromZero(percentage)
-    this.array[2] = this.array[2].getPercentageFromZero(percentage)
-    this.array[3] = this.array[3].getPercentageFromZero(percentage)
-    this.array[4] = this.array[4].getPercentageFromOne(percentage)
-    this.array[5] = this.array[5].getPercentageFromZero(percentage)
-    this.array[6] = this.array[6].getPercentageFromZero(percentage)
-    this.array[7] = this.array[7].getPercentageFromZero(percentage)
-    this.array[8] = this.array[8].getPercentageFromOne(percentage)
-}
+
 //if percentage is 0 the filter intensity is 0
 public fun FloatArray.serPercentageForMatrix(percentage: Int): FloatArray {
     var floatArray = this

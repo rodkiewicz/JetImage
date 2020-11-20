@@ -2,6 +2,7 @@ package pl.mrodkiewicz.imageeditor
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -42,7 +43,8 @@ class MainViewModel @ViewModelInject constructor(
     init {
         viewModelScope.launch(Dispatchers.Main) {
             _filterPipeline.onEach { _filters.value = it.first }.debounce(250L).collect {
-                imageProcessorManager.process(it)
+                _bitmap.value = imageProcessorManager.process(it)
+                Timber.d("bitmap value r ${Color(_bitmap.value!!.getPixel(100,100)).red} g ${Color(_bitmap.value!!.getPixel(100,100)).green} b ${Color(_bitmap.value!!.getPixel(100,100)).blue}")
             }
         }
 

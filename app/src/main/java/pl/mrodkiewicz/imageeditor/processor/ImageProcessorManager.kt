@@ -3,6 +3,7 @@ package pl.mrodkiewicz.imageeditor.processor
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import androidx.compose.ui.graphics.Color
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CompletableJob
@@ -39,39 +40,55 @@ class ImageProcessorManager(
     suspend fun process(filters: Pair<ImmutableList<Filter>, Filter>): Bitmap =
         withContext(Dispatchers.Default + job) {
             if (filters.second.id == cachedFilterID && cachedBitmap != null) {
-                when (filters.second.filterMatrix) {
-                    is FilterMatrix.ColorFilter -> colorFilterMIP.loadFilter(
-                        cachedBitmap!!,
-                        filters.second
-                    )
-                    else -> convolutionMIP.loadFilter(cachedBitmap!!, filters.second)
+                Timber.d("process with cache")
+                return@withContext when (filters.second.filterMatrix) {
+                    is FilterMatrix.ColorFilter -> {
+                        var bitmap = colorFilterMIP.loadFilter(
+                            cachedBitmap!!,
+                            filters.second
+                        )
+                        cache(bitmap,filters.second.id)
+                        bitmap
+                    }
+                    else -> {
+                        var bitmap = convolutionMIP.loadFilter(cachedBitmap!!, filters.second)
+                        cache(bitmap,filters.second.id)
+                        bitmap
+                    }
+
                 }
             } else {
-                cachedFilterID = UUID.randomUUID()
-                process(filters.first)
+                return@withContext process(filters.first)
             }
         }
 
     suspend fun process(filters: ImmutableList<Filter>): Bitmap =
         withContext(Dispatchers.Default + job) {
             var bitmap = draftBitmap.copy(draftBitmap.config, true)
+            Timber.d("filters =====")
             filters.forEach {
-                when(it.filterMatrix){
-                    is FilterMatrix.ColorFilter -> colorFilterMIP.loadFilter(
+                Timber.d("filters ${it.name}")
+                when (it.filterMatrix) {
+                    is FilterMatrix.ColorFilter -> bitmap = colorFilterMIP.loadFilter(
                         bitmap!!,
                         it
                     )
-                    else -> convolutionMIP.loadFilter(bitmap!!, it)
+                    else -> bitmap = convolutionMIP.loadFilter(bitmap!!, it)
                 }
             }
-            cache(bitmap!!, filters.last().id)
+            cache(bitmap!!, UUID.randomUUID())
+            Timber.d("process without cache")
+            Timber.d("bitmap value r ${Color(bitmap!!.getPixel(100,100)).red} g ${Color(bitmap!!.getPixel(100,100)).green} b ${Color(bitmap!!.getPixel(100,100)).blue}")
+
             return@withContext bitmap
         }
 
-    fun cache(bitmap: Bitmap, filterId: UUID){
-        cachedBitmap = bitmap.copy(bitmap.config,true)
+    fun cache(bitmap: Bitmap, filterId: UUID) {
+        cachedBitmap = bitmap.copy(bitmap.config, true)
         cachedFilterID = filterId
+        Timber.d("cache ${bitmap.hashCode()} ${filterId}")
     }
+
     fun resizeImage() {
         if (originalBitmap.width >= width || originalBitmap.height >= height) {
             Timber.d("resizeImage: originalBitmap.width >= width || originalBitmap.height >= height")

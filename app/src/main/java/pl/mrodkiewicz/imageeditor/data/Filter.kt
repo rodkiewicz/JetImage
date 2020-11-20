@@ -89,12 +89,13 @@ fun Float.getPercentageFromZero(percentage: Int): Float {
 }
 
 val default_filters = mutableListOf(
-    Filter(
-        name = "Convolution",
-        value = 0,
-        filterMatrix = FilterMatrix.Convolve3x3(convolutionMatrix1),
-        icon = R.drawable.ic_filter_24
-    ), Filter(
+//    Filter(
+//        name = "Convolution",
+//        value = 0,
+//        filterMatrix = FilterMatrix.Convolve3x3(convolutionMatrix1),
+//        icon = R.drawable.ic_filter_24
+//    )
+     Filter(
         name = "Dark",
         value = 0,
         filterMatrix = FilterMatrix.ColorFilter(darkMatrix),
