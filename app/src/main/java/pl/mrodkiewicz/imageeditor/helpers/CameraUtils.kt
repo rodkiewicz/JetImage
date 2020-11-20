@@ -11,7 +11,8 @@ import java.util.*
 
 fun createPictureUri(
     context: Context,
-    folder: String
+    folder: String,
+    name: String,
 ): Uri? {
     var currentPhotoPath = ""
     val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
@@ -19,7 +20,7 @@ fun createPictureUri(
         File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!.absolutePath + "/" + folder)
     storageDir.mkdir()
     val file = File.createTempFile(
-        "JPEG_${timeStamp}_", /* prefix */
+        "JPEG_${name}_${timeStamp}", /* prefix */
         ".jpg", /* suffix */
         storageDir/* directory */
     ).apply {

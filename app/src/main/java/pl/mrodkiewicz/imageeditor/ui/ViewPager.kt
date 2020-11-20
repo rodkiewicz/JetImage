@@ -11,6 +11,9 @@ import androidx.compose.ui.draw.drawOpacity
 import androidx.compose.ui.gesture.doubleTapGestureFilter
 import androidx.compose.ui.gesture.longPressGestureFilter
 import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.unit.Density
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -23,7 +26,7 @@ import kotlin.math.roundToInt
 
 class PagerState(
     clock: AnimationClockObservable,
-    currentPage: Int = 2,
+    currentPage: Int = 0,
     minPage: Int = 0,
     maxPage: Int = 0
 ) {
@@ -51,12 +54,12 @@ class PagerState(
         }
 
 
-    var pageWidth = 0
+    var pageHeight = 0
     private var _currentOffset by mutableStateOf(0f)
     var currentOffset: Float
         get() = _currentOffset
         set(value) {
-            _currentOffset = value.coerceIn((-pageWidth * maxPage).toFloat(), 0f)
+            _currentOffset = value.coerceIn((-pageHeight * maxPage).toFloat(), 0f)
         }
 }
 
@@ -70,7 +73,7 @@ private val Measurable.page: Int
     get() = (parentData as? PageData)?.page ?: error("no PageData for measurable $this")
 
 @Composable
-fun Pager(
+public fun Pager(
     state: PagerState,
     offscreenLimit: Int = 10,
     modifier: Modifier = Modifier,
@@ -105,7 +108,7 @@ fun Pager(
                 visibility.value = !visibility.value
             }
             .drawOpacity(opacity = opacity)
-            .scrollable(Orientation.Horizontal, rememberScrollableController {
+            .scrollable(Orientation.Vertical, rememberScrollableController {
                 if (visibility.value) {
                     state.currentOffset += it
                     it
@@ -113,7 +116,7 @@ fun Pager(
                     0f
                 }
             }).scrollable(
-                orientation = Orientation.Vertical, rememberScrollableController {
+                orientation = Orientation.Horizontal, rememberScrollableController {
                     if (visibility.value) {
                         onValueChange.invoke(state.currentPage, it)
                         it
@@ -137,14 +140,14 @@ fun Pager(
                     val xCenterOffset = (constraints.maxWidth - placeable.width) / 2
                     val yCenterOffset = (constraints.maxHeight - placeable.height) / 2
                     if (currentPage == page) {
-                        pageSize = placeable.width
-                        state.pageWidth = pageSize
+                        pageSize = placeable.height
+                        state.pageHeight = pageSize
                     }
                     placeable.place(
-                        x = (xCenterOffset + offset + (page * placeable.width)).roundToInt(),
-                        y = yCenterOffset
+                        x = xCenterOffset,
+                        y = (yCenterOffset + offset + (page * placeable.height)).roundToInt()
                     )
-                    if ((xCenterOffset + offset + (page * placeable.width)).roundToInt() < constraints.maxWidth / 2) {
+                    if ((yCenterOffset + offset + (page * placeable.height)).roundToInt() < constraints.maxHeight / 2) {
                         state.currentPage = page
                     }
                 }

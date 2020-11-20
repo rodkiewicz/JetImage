@@ -16,7 +16,7 @@ import pl.mrodkiewicz.imageeditor.R
  val latoBlack = fontFamily(ResourceFont(R.font.lato_black, FontWeight.W900, style = FontStyle.Normal))
  val roboto = fontFamily( ResourceFont(R.font.roboto_mono_light))
 
-val actionBarTextStyle = TextStyle(
+public val actionBarTextStyle = TextStyle(
     fontFamily = latoLight,
     color = yellowPrimary,
     fontSize = 32.sp

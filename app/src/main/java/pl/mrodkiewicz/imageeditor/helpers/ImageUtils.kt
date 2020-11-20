@@ -15,9 +15,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-fun Uri.saveImage(
+fun Bitmap.saveImage(
     context: Context,
-    folder: String
+    folder: String,
+    filename: String,
 ): Uri? {
 
     val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
@@ -25,20 +26,19 @@ fun Uri.saveImage(
         File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!.absolutePath + "/" + folder)
     storageDir.mkdir()
     var file = File.createTempFile(
-        "JPEG_${timeStamp}_", /* prefix */
+        "JPEG_${filename}_${timeStamp}_", /* prefix */
         ".jpg", /* suffix */
         storageDir/* directory */
     )
 
     var uri = FileProvider.getUriForFile(
         context,
-        "rodkiewicz.carjournal.fileprovider",
+        "pl.mrodkiewicz.imageeditor.fileprovider",
         file
     )
     try {
-        val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, this)
         val bmpOut = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, bmpOut);
+        this.compress(Bitmap.CompressFormat.PNG, 100, bmpOut)
         bmpOut.close()
     } catch (e: NullPointerException) {
         return null
