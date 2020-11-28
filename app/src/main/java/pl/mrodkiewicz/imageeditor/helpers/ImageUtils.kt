@@ -26,8 +26,8 @@ fun Bitmap.saveImage(
         File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!.absolutePath + "/" + folder)
     storageDir.mkdir()
     var file = File.createTempFile(
-        "JPEG_${filename}_${timeStamp}_", /* prefix */
-        ".jpg", /* suffix */
+        "PNG_${filename}_${timeStamp}_", /* prefix */
+        ".png", /* suffix */
         storageDir/* directory */
     )
 

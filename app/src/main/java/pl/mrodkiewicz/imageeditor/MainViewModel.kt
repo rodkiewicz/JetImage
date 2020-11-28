@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pl.mrodkiewicz.imageeditor.data.Filter
 import pl.mrodkiewicz.imageeditor.data.default_filters
+import pl.mrodkiewicz.imageeditor.helpers.saveImage
 import pl.mrodkiewicz.imageeditor.processor.ImageProcessorManager
 import timber.log.Timber
 
@@ -41,10 +42,24 @@ class MainViewModel @ViewModelInject constructor(
 
 
     init {
-        viewModelScope.launch(Dispatchers.Main) {
+        viewModelScope.launch(Dispatchers.Default) {
             _filterPipeline.onEach { _filters.value = it.first }.debounce(250L).collect {
-                _bitmap.value = imageProcessorManager.process(it)
-                Timber.d("bitmap value r ${Color(_bitmap.value!!.getPixel(100,100)).red} g ${Color(_bitmap.value!!.getPixel(100,100)).green} b ${Color(_bitmap.value!!.getPixel(100,100)).blue}")
+                if (width != 0) {
+                    var newBitmap = imageProcessorManager.process(it)
+                    newBitmap.saveImage(context, "bitmaps", "${_filters.value[0].value}")
+                    Timber.d(
+                        "bitmap value r ${Color(newBitmap.getPixel(100, 100)).red} g ${
+                            Color(
+                                newBitmap.getPixel(100, 100)
+                            ).green
+                        } b ${Color(newBitmap.getPixel(100, 100)).blue}"
+
+                    )
+                    withContext(Dispatchers.Main) {
+                        _bitmap.value = newBitmap
+                    }
+                }
+
             }
         }
 
@@ -64,27 +79,53 @@ class MainViewModel @ViewModelInject constructor(
     fun setBitmap(bitmap: Bitmap?) {
         bitmap?.let {
             originalBitmap = it
+//            bitmap.saveImage(context, "bitmaps", "startBitamp_${bitmap.height}")
             draftBitmap = it
-            _bitmap.value = it
             viewModelScope.launch(Dispatchers.Default) {
                 imageProcessorManager.setBitmap(draftBitmap)
-                withContext(Dispatchers.Main) {
-                    _bitmap.value =
-                        imageProcessorManager.process(_filters.value)
+                if (width != 0) {
+                    Timber.d("setBitmap width != 0")
+                    withContext(Dispatchers.Default) {
+                        _bitmap.value =
+                            imageProcessorManager.process(_filters.value)
+                    }
+                } else {
+                    Timber.d("setBitmap width == 0")
                 }
             }
         }
     }
 
-    fun setWidthAndHeigth(width: Int, height: Int) {
-        if ((this.width != width || this.height != height) && (height != 0 && width != 0)) {
+    fun setWidth(width: Int) {
+        Timber.d("setBitmap width ${width}")
+        if ((this.width != width) && (width != 0) && draftBitmap.width != this.width && ::originalBitmap.isInitialized) {
             this.width = width
-            this.height = height
-            imageProcessorManager.resizeImage()
-            Timber.d("resize ${width} ${height}")
+            viewModelScope.launch {
+                withContext(Dispatchers.Default) {
+                    Timber.d("resizeImage: started ${width} ${height}")
+                    if (originalBitmap.width <= width || width == 0) {
+                        Timber.d("resizeImage: originalBitmap.width <= width || width == 0")
+                    } else {
+                        height = originalBitmap.height / (originalBitmap.width / width)
+                        viewModelScope.launch {
+                            withContext(Dispatchers.Default) {
+                                Timber.d("resizeImage ${width} ${height}")
+                                draftBitmap =
+                                    Bitmap.createScaledBitmap(originalBitmap, width, height, false)
+                                Timber.d("resizeImage finished ${draftBitmap.width} ${draftBitmap.height}")
+                                imageProcessorManager.setBitmap(draftBitmap)
+                                withContext(Dispatchers.Main) {
+                                    _bitmap.value = draftBitmap
+                                }
+                            }
+                        }
+
+
+                    }
+                }
+            }
         }
+        this.width = width
     }
-
-
-
 }
+

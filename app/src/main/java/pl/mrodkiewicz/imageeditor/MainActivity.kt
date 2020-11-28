@@ -1,11 +1,12 @@
 package pl.mrodkiewicz.imageeditor
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.widget.ImageView
 import androidx.activity.viewModels
-import androidx.annotation.Px
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,30 +17,33 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.onDispose
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageAsset
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.WithConstraints
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.AnimationClockAmbient
 import androidx.compose.ui.platform.ContextAmbient
-import androidx.compose.ui.platform.DensityAmbient
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Observer
-import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.skydoves.landscapist.glide.GlideImage
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import pl.mrodkiewicz.imageeditor.data.Filter
-import pl.mrodkiewicz.imageeditor.helpers.saveImage
+import pl.mrodkiewicz.imageeditor.data.FilterMatrix
+import pl.mrodkiewicz.imageeditor.data.convolutionMatrix1
 import pl.mrodkiewicz.imageeditor.ui.ImageEditorTheme
 import pl.mrodkiewicz.imageeditor.ui.Pager
 import pl.mrodkiewicz.imageeditor.ui.PagerState
@@ -56,9 +60,16 @@ class MainActivity : AppCompatActivity() {
         mainViewModel.setBitmap(
             BitmapFactory.decodeResource(
                 this.resources,
-                R.drawable.abc
-            )
+                R.drawable.cde,
+                BitmapFactory.Options().apply {
+                    this.inScaled = false
+                })
         )
+        setContent {
+            ImageEditorTheme {
+                MainScreen(mainViewModel)
+            }
+        }
         mainViewModel.bitmap.observe(this,  {
             setContent {
                 ImageEditorTheme {
@@ -66,8 +77,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
-
-
     }
 
     @Composable
@@ -102,48 +111,42 @@ class MainActivity : AppCompatActivity() {
         val pagerState = remember(clock) { PagerState(clock) }
         val filters = mainViewModel.filters.collectAsState()
         val bitmap = mainViewModel.bitmap.observeAsState()
+        val displayMetrics = DisplayMetrics()
+
+
         Box {
             Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
-                mainViewModel.bitmap.value?.let { ImagePreview(it) } ?: run {
-                    Text(
-                        text = "BITMAP IS NULL",
-                        style = MaterialTheme.typography.caption,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
+                ImagePreview(bitmap.value)
             }
             Text(text = filters.value[0].value.toString(), color = Color.White)
             FollowedPodcasts(
                 mainViewModel = mainViewModel,
                 items = filters.value,
                 pagerState = pagerState,
-                modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight()
-            )
-
-
+                modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight())
         }
     }
 
     @Composable
-    fun ImagePreview(bitmap: Bitmap) {
-        val context = ContextAmbient.current
-
-        val customView = remember {
-            // Creates custom view
-            ImageView(context).apply {
-                // Sets up listeners for View -> Compose communication
-                setImageBitmap(bitmap)
+    fun ImagePreview(bitmap: Bitmap?) {
+        WithConstraints{
+            mainViewModel.setWidth(width= constraints.maxWidth)
+            bitmap?.let { Image(
+                it.asImageAsset(),
+                contentScale = ContentScale.FillWidth
+            ) } ?: run {
+                Text(
+                    text = "BITMAP IS NULL",
+                    style = MaterialTheme.typography.caption,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
             }
+
         }
 
-        // Adds view to Compose
-        AndroidView({ customView }) { view ->
-            view.setImageBitmap(bitmap)
-            mainViewModel.setWidthAndHeigth(view.width, view.height)
-        }
     }
 
     @Composable
@@ -221,4 +224,6 @@ class MainActivity : AppCompatActivity() {
 
         }
     }
+
+
 }

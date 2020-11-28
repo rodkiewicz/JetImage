@@ -1,5 +1,6 @@
 package pl.mrodkiewicz.imageeditor.data
 
+import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import kotlinx.collections.immutable.toImmutableList
@@ -19,23 +20,49 @@ data class Filter(
 )
 
 sealed class FilterMatrix(val matrix: FloatArray) {
-    data class ColorFilter(var colorMatrix: FloatArray): FilterMatrix(colorMatrix)
-    data class Convolve3x3(val convolveMatrix: FloatArray) : FilterMatrix(convolveMatrix)
-    data class Convolve5x5(val convolveMatrix: FloatArray) : FilterMatrix(convolveMatrix)
+    data class ColorFilter(
+        var colorMatrix: FloatArray,
+        var calculateNewMatrix: (FloatArray, Int) -> FloatArray = { matrix, update ->
+            matrix.serPercentageForMatrix(update)
+        }
+    ) : FilterMatrix(colorMatrix)
+
+    data class Convolve3x3(
+        val convolveMatrix: FloatArray,
+        var calculateNewMatrix: (FloatArray, Int) -> FloatArray = { matrix, update ->
+            matrix
+        }
+    ) : FilterMatrix(convolveMatrix)
+
+    data class Convolve5x5(
+        val convolveMatrix: FloatArray,
+        var calculateNewMatrix: (FloatArray, Int) -> FloatArray = { matrix, update ->
+            matrix
+        }
+    ) : FilterMatrix(convolveMatrix)
 
 }
-fun FilterMatrix.setPercentage(percentage : Int): FloatArray{
-    return when(this){
+
+fun FilterMatrix.setPercentage(percentage: Int): FloatArray {
+    return when (this) {
         is FilterMatrix.ColorFilter -> this.matrix.serPercentageForMatrix(percentage)
         is FilterMatrix.Convolve3x3 -> this.matrix
         is FilterMatrix.Convolve5x5 -> this.matrix
     }
 }
-var convolutionMatrix1 = floatArrayOf(
-    0.000000000001f, 0.000000000001f,0.000000000001f,
-    0.000000000001f, 0.000000000001f, 0.000000000001f,
-    0.000000000001f, 0.000000000001f, 0.000000000001f,
 
+var convolutionMatrix1 = floatArrayOf(
+    0f,-1f,0f,
+    -1f,5f,-1f,
+    0f,-1f,0f,
+)
+
+var convolutionMatrix2 = floatArrayOf(
+    -1f, -1f, -1f, -1f, -1f,
+    -1f, -1f, -1f, -1f, -1f,
+    -1f, -1f, 25f, -1f, -1f,
+    -1f, -1f, -1f, -1f, -1f,
+    -1f, -1f, -1f, -1f, -1f,
 )
 val nonFilteredMatrix =
     floatArrayOf(
@@ -89,13 +116,13 @@ fun Float.getPercentageFromZero(percentage: Int): Float {
 }
 
 val default_filters = mutableListOf(
-//    Filter(
-//        name = "Convolution",
-//        value = 0,
-//        filterMatrix = FilterMatrix.Convolve3x3(convolutionMatrix1),
-//        icon = R.drawable.ic_filter_24
-//    )
-     Filter(
+    Filter(
+        name = "Sepia",
+        value = 0,
+        filterMatrix = FilterMatrix.ColorFilter(sepiaMatrix),
+        icon = R.drawable.ic_filter_24
+    ),
+    Filter(
         name = "Dark",
         value = 0,
         filterMatrix = FilterMatrix.ColorFilter(darkMatrix),

@@ -1,26 +1,30 @@
 package pl.mrodkiewicz.imageeditor.processor
 
+import android.R.attr.path
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.graphics.drawable.Drawable
 import androidx.compose.ui.graphics.Color
+import androidx.core.graphics.drawable.toBitmap
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.SimpleTarget
+import com.bumptech.glide.request.transition.Transition
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.CompletableJob
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import pl.mrodkiewicz.imageeditor.data.Filter
 import pl.mrodkiewicz.imageeditor.data.FilterMatrix
 import timber.log.Timber
 import java.util.*
+
 
 class ImageProcessorManager(
     val convolutionMIP: ConvolutionMatrixImageProcessor,
     val colorFilterMIP: ColorFilterMatrixImageProcessor,
     @ApplicationContext val context: Context
 ) {
-    // original NOT EDITABLE BITMAP
     private lateinit var originalBitmap: Bitmap
 
     // bitmap resized to device pixel dimensions
@@ -39,27 +43,27 @@ class ImageProcessorManager(
 
     suspend fun process(filters: Pair<ImmutableList<Filter>, Filter>): Bitmap =
         withContext(Dispatchers.Default + job) {
-            if (filters.second.id == cachedFilterID && cachedBitmap != null) {
-                Timber.d("process with cache")
-                return@withContext when (filters.second.filterMatrix) {
-                    is FilterMatrix.ColorFilter -> {
-                        var bitmap = colorFilterMIP.loadFilter(
-                            cachedBitmap!!,
-                            filters.second
-                        )
-                        cache(bitmap,filters.second.id)
-                        bitmap
-                    }
-                    else -> {
-                        var bitmap = convolutionMIP.loadFilter(cachedBitmap!!, filters.second)
-                        cache(bitmap,filters.second.id)
-                        bitmap
-                    }
-
-                }
-            } else {
-                return@withContext process(filters.first)
-            }
+//            if (filters.second.id == cachedFilterID && cachedBitmap != null) {
+//                Timber.d("process with cache")
+//                return@withContext when (filters.second.filterMatrix) {
+//                    is FilterMatrix.ColorFilter -> {
+//                        var bitmap = colorFilterMIP.loadFilter(
+//                            cachedBitmap!!,
+//                            filters.second
+//                        )
+//                        cache(bitmap, filters.second.id)
+//                        bitmap
+//                    }
+//                    else -> {
+//                        var bitmap = convolutionMIP.loadFilter(cachedBitmap!!, filters.second)
+//                        cache(bitmap, filters.second.id)
+//                        bitmap
+//                    }
+//
+//                }
+//            } else {
+            return@withContext process(filters.first)
+//            }
         }
 
     suspend fun process(filters: ImmutableList<Filter>): Bitmap =
@@ -76,9 +80,24 @@ class ImageProcessorManager(
                     else -> bitmap = convolutionMIP.loadFilter(bitmap!!, it)
                 }
             }
-            cache(bitmap!!, UUID.randomUUID())
-            Timber.d("process without cache")
-            Timber.d("bitmap value r ${Color(bitmap!!.getPixel(100,100)).red} g ${Color(bitmap!!.getPixel(100,100)).green} b ${Color(bitmap!!.getPixel(100,100)).blue}")
+            Timber.d("bitmap hashcodes ${draftBitmap.hashCode()} ${bitmap.hashCode()}")
+            Timber.d(
+                "bitmap value r ${
+                    Color(
+                        bitmap!!.getPixel(
+                            100,
+                            100
+                        )
+                    ).red
+                } g ${Color(bitmap!!.getPixel(100, 100)).green} b ${
+                    Color(
+                        bitmap!!.getPixel(
+                            100,
+                            100
+                        )
+                    ).blue
+                }"
+            )
 
             return@withContext bitmap
         }
@@ -90,27 +109,30 @@ class ImageProcessorManager(
     }
 
     fun resizeImage() {
-        if (originalBitmap.width >= width || originalBitmap.height >= height) {
-            Timber.d("resizeImage: originalBitmap.width >= width || originalBitmap.height >= height")
-            return
-        }
-        val scaleWidth = (width / originalBitmap.width).toFloat()
-        val scaleHeight = (height / originalBitmap.height).toFloat()
-        val matrix = Matrix()
-        matrix.postScale(scaleWidth, scaleHeight)
-        val resizedBitmap = Bitmap.createBitmap(
-            originalBitmap, 0, 0, width, height, matrix, false
-        )
-        resizedBitmap?.let {
-            draftBitmap = it
-            Timber.d("resizeImage: bitmap resized")
-        }
+        Timber.d("resizeImage ${width} ${height}")
+            Glide
+                .with(context)
+                .load(originalBitmap)
+                .apply(RequestOptions().override(width, height))
+                .into(object : SimpleTarget<Drawable>(){
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        transition: Transition<in Drawable>?
+                    ) {
+                        draftBitmap = resource.toBitmap()
+                    }
+
+                })
     }
 
     fun cleanup() {
         originalBitmap.recycle()
         draftBitmap.recycle()
         cachedBitmap?.recycle()
+
+    }
+
+    suspend fun setWidth(width: Int) {
 
     }
 }
