@@ -7,7 +7,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
-import pl.mrodkiewicz.imageeditor.processor.ColorFilterMatrixImageProcessor
 
 @Module
 @InstallIn(ApplicationComponent::class)

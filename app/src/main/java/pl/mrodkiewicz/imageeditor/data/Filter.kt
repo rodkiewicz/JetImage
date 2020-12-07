@@ -1,6 +1,5 @@
 package pl.mrodkiewicz.imageeditor.data
 
-import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import kotlinx.collections.immutable.toImmutableList
@@ -41,28 +40,27 @@ sealed class FilterMatrix(val matrix: FloatArray) {
         }
     ) : FilterMatrix(convolveMatrix)
 
-}
+    data class Blur(
+        var validateValue: (Int) -> Float = { value ->
+            (value / 100f * 25f).coerceAtLeast(1f).coerceAtMost(25f)
+        }
+    ) : FilterMatrix(nonFilteredMatrix)
 
-fun FilterMatrix.setPercentage(percentage: Int): FloatArray {
-    return when (this) {
-        is FilterMatrix.ColorFilter -> this.matrix.serPercentageForMatrix(percentage)
-        is FilterMatrix.Convolve3x3 -> this.matrix
-        is FilterMatrix.Convolve5x5 -> this.matrix
-    }
 }
 
 var convolutionMatrix1 = floatArrayOf(
-    0f,-1f,0f,
-    -1f,5f,-1f,
-    0f,-1f,0f,
+    0f, -1f, 0f,
+    -1f, 5f, -1f,
+    0f, -1f, 0f,
 )
 
+
 var convolutionMatrix2 = floatArrayOf(
-    -1f, -1f, -1f, -1f, -1f,
-    -1f, -1f, -1f, -1f, -1f,
-    -1f, -1f, 25f, -1f, -1f,
-    -1f, -1f, -1f, -1f, -1f,
-    -1f, -1f, -1f, -1f, -1f,
+    1f / 256f, 4f / 256f, 6f / 256f, 4f / 256f, 1f / 256f,
+    4f / 256f, 16f / 256f, 24f / 256f, 16f / 256f, 4f / 256f,
+    6f / 256f, 24f / 256f, 36f / 256f, 24f / 256f, 6f / 256f,
+    4f / 256f, 16f / 256f, 24f / 256f, 16f / 256f, 4f / 256f,
+    1f / 256f, 4f / 256f, 6f / 256f, 4f / 256f, 1f / 256f
 )
 val nonFilteredMatrix =
     floatArrayOf(
@@ -89,6 +87,26 @@ val sepiaMatrix =
         .769f, .686f, .534f,
         .189f, .168f, .131f
     )
+val redMatrix =
+    floatArrayOf(
+        1f, 0f, 0f,
+        1f, 0f, 0f,
+        1f, 0f, 0f
+    )
+val greenMatrix =
+    floatArrayOf(
+        0f, 1f, 0f,
+        0f, 1f, 0f,
+        0f, 1f, 0f
+    )
+
+val blueMatrix =
+    floatArrayOf(
+        0f, 0f, 1f,
+        0f, 0f, 1f,
+        0f, 0f, 1f
+    )
+
 
 //if percentage is 0 the filter intensity is 0
 fun FloatArray.serPercentageForMatrix(percentage: Int): FloatArray {
@@ -117,15 +135,33 @@ fun Float.getPercentageFromZero(percentage: Int): Float {
 
 val default_filters = mutableListOf(
     Filter(
-        name = "Sepia",
+        name = "Red",
         value = 0,
-        filterMatrix = FilterMatrix.ColorFilter(sepiaMatrix),
+        filterMatrix = FilterMatrix.ColorFilter(redMatrix),
         icon = R.drawable.ic_filter_24
     ),
     Filter(
-        name = "Dark",
+        name = "Green",
         value = 0,
-        filterMatrix = FilterMatrix.ColorFilter(darkMatrix),
+        filterMatrix = FilterMatrix.ColorFilter(greenMatrix),
         icon = R.drawable.ic_filter_24
-    )
+    ),
+    Filter(
+        name = "Blue",
+        value = 0,
+        filterMatrix = FilterMatrix.ColorFilter(blueMatrix),
+        icon = R.drawable.ic_filter_24
+    ),
+    Filter(
+        name = "Blur",
+        value = 1,
+        filterMatrix = FilterMatrix.Blur(),
+        icon = R.drawable.ic_filter_24
+    ),
+//    Filter(
+//        name = "Dark",
+//        value = 0,
+//        filterMatrix = FilterMatrix.ColorFilter(darkMatrix),
+//        icon = R.drawable.ic_filter_24
+//    )
 ).toImmutableList()

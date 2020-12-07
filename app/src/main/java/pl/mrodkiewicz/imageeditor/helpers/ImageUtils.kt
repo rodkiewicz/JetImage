@@ -8,7 +8,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
-import androidx.core.graphics.get
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -50,7 +49,8 @@ fun addImageToGallery(context: Context, filePath: String) {
     val values = ContentValues()
 
     values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
-    values.put(MediaStore.Images.Media.MIME_TYPE,
+    values.put(
+        MediaStore.Images.Media.MIME_TYPE,
         MimeTypeMap.getSingleton()
             .getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(filePath))
     )

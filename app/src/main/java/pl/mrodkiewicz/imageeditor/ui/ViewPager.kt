@@ -2,9 +2,9 @@ package pl.mrodkiewicz.imageeditor.ui
 
 import androidx.compose.animation.animate
 import androidx.compose.animation.core.AnimationClockObservable
-import androidx.compose.foundation.Box
 import androidx.compose.foundation.gestures.rememberScrollableController
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.drawOpacity
@@ -73,10 +73,10 @@ private val Measurable.page: Int
     get() = (parentData as? PageData)?.page ?: error("no PageData for measurable $this")
 
 @Composable
-public fun Pager(
+fun Pager(
+    modifier: Modifier = Modifier,
     state: PagerState,
     offscreenLimit: Int = 10,
-    modifier: Modifier = Modifier,
     onValueChange: (Int, Float) -> Unit,
     pageContent: @Composable() (PagerScope.() -> Unit),
 ) {
@@ -85,7 +85,7 @@ public fun Pager(
     val opacity = animate(if (visibility.value) 1f else 0f)
 
     Layout(
-        children = {
+        content = {
             val minPage = (state.currentPage - offscreenLimit).coerceAtLeast(state.minPage)
             val maxPage = (state.currentPage + offscreenLimit).coerceAtMost(state.maxPage)
 
@@ -93,7 +93,7 @@ public fun Pager(
                 val pageData = PageData(page)
                 val scope = PagerScope(state, page)
                 key(pageData) {
-                    Box(gravity = Alignment.Center, modifier = pageData) {
+                    Box(modifier = pageData) {
                         scope.pageContent()
                     }
                 }
@@ -124,8 +124,7 @@ public fun Pager(
                         0f
                     }
                 }
-            )
-
+            ),
 
     ) { measurables, constraints ->
         layout(constraints.maxWidth, constraints.maxHeight) {

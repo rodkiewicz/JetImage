@@ -1,12 +1,10 @@
 package pl.mrodkiewicz.imageeditor.helpers
 
-import androidx.renderscript.Matrix3f
-
 
 //if percentage is 0 the filter intensity is 0
 
 //if percentage is 0 the filter intensity is 0
-public fun FloatArray.serPercentageForMatrix(percentage: Int): FloatArray {
+fun FloatArray.serPercentageForMatrix(percentage: Int): FloatArray {
     var floatArray = this
     floatArray[0] = floatArray[0].getPercentageFromOne(percentage)
     floatArray[1] = floatArray[1].getPercentageFromZero(percentage)
@@ -19,12 +17,14 @@ public fun FloatArray.serPercentageForMatrix(percentage: Int): FloatArray {
     floatArray[8] = floatArray[8].getPercentageFromOne(percentage)
     return floatArray
 }
+
 //if percentage is 0 the  float value is 1, if percentage is 100 the float value is float
-public fun Float.getPercentageFromOne(percentage: Int): Float {
-    return this+((1f-this)*((100f-percentage)/100f))
+fun Float.getPercentageFromOne(percentage: Int): Float {
+    return this + ((1f - this) * ((100f - percentage) / 100f))
 }
+
 //if percentage is 0 the  float value is 0, if percentage is 100 the float value is float
-public fun Float.getPercentageFromZero(percentage: Int): Float {
-    return ( this / 100 * percentage)
+fun Float.getPercentageFromZero(percentage: Int): Float {
+    return (this / 100 * percentage)
 }
 
