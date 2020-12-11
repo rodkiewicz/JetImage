@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
  * https://github.com/android/compose-samples/blob/34a75fb3672622a3fb0e6a78adc88bbc2886c28f/Jetcaster/app/src/main/java/com/example/jetcaster/util/Pager.kt
  */
 
-class PagerState(
+class EditorPagerState(
     clock: AnimationClockObservable,
     currentPage: Int = 0,
     minPage: Int = 0,
@@ -65,20 +65,20 @@ class PagerState(
 
 
 @Immutable
-private data class PageData(val page: Int) : ParentDataModifier {
-    override fun Density.modifyParentData(parentData: Any?): Any? = this@PageData
+private data class EditorPageData(val page: Int) : ParentDataModifier {
+    override fun Density.modifyParentData(parentData: Any?): Any? = this@EditorPageData
 }
 
 private val Measurable.page: Int
-    get() = (parentData as? PageData)?.page ?: error("no PageData for measurable $this")
+    get() = (parentData as? EditorPageData)?.page ?: error("no PageData for measurable $this")
 
 @Composable
-fun Pager(
+fun EditorPager(
     modifier: Modifier = Modifier,
-    state: PagerState,
+    state: EditorPagerState,
     offscreenLimit: Int = 10,
     onValueChange: (Int, Float) -> Unit,
-    pageContent: @Composable() (PagerScope.() -> Unit),
+    pageContent: @Composable() (EditorPagerScope.() -> Unit),
 ) {
     var pageSize by remember { mutableStateOf(0) }
     val visibility = remember { mutableStateOf(false) }
@@ -90,10 +90,10 @@ fun Pager(
             val maxPage = (state.currentPage + offscreenLimit).coerceAtMost(state.maxPage)
 
             for (page in minPage..maxPage) {
-                val pageData = PageData(page)
-                val scope = PagerScope(state, page)
+                val pageData = EditorPageData(page)
+                val scope = EditorPagerScope(state, page)
                 key(pageData) {
-                    Box(modifier = pageData) {
+                    Box(contentAlignment = Alignment.Center, modifier = pageData) {
                         scope.pageContent()
                     }
                 }
@@ -154,8 +154,8 @@ fun Pager(
     }
 }
 
-class PagerScope(
-    private val state: PagerState,
+class EditorPagerScope(
+    private val state: EditorPagerState,
     val page: Int
 ) {
     val currentPage: Int

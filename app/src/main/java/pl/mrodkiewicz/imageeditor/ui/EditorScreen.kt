@@ -56,10 +56,9 @@ fun EditorScreen(mainViewModel: MainViewModel) {
 @Composable
 fun EditorView(mainViewModel: MainViewModel) {
     val clock = AnimationClockAmbient.current
-    val pagerState = remember(clock) { PagerState(clock) }
+    val pagerState = remember(clock) { EditorPagerState(clock) }
     val filters = mainViewModel.filters.collectAsState()
     val bitmap = mainViewModel.bitmap.observeAsState()
-    val displayMetrics = DisplayMetrics()
 
 
     Box {
@@ -67,7 +66,7 @@ fun EditorView(mainViewModel: MainViewModel) {
             ImagePreview(mainViewModel,bitmap.value)
         }
         Text(text = filters.value[0].value.toString(), color = Color.White)
-        FollowedPodcasts(
+        FilterControl(
             mainViewModel = mainViewModel,
             items = filters.value,
             pagerState = pagerState,
@@ -101,25 +100,25 @@ fun ImagePreview(mainViewModel: MainViewModel,bitmap: Bitmap?) {
 }
 
 @Composable
-fun FollowedPodcasts(
+fun FilterControl(
     modifier: Modifier = Modifier,
     mainViewModel: MainViewModel,
     items: List<Filter>,
-    pagerState: PagerState = run {
+    pagerState: EditorPagerState = run {
         val clock = AnimationClockAmbient.current
-        remember(clock) { PagerState(clock) }
+        remember(clock) { EditorPagerState(clock) }
     }
 ) {
     if (items.isNotEmpty()) {
         pagerState.maxPage = (items.size - 1).coerceAtLeast(0)
-        Pager(
+        EditorPager(
             state = pagerState,
             modifier = modifier,
             onValueChange = { index, value ->
                 mainViewModel.updateFilter(index, (value).toInt())
             },
         ) {
-            FollowedPodcastCarouselItem(
+            EditorPagerItem(
                 filter = items[page],
                 modifier = Modifier.padding(4.dp).fillMaxHeight().scalePagerItems()
             )
@@ -128,7 +127,7 @@ fun FollowedPodcasts(
 }
 
 @Composable
-private fun FollowedPodcastCarouselItem(filter: Filter, modifier: Modifier = Modifier) {
+private fun EditorPagerItem(filter: Filter, modifier: Modifier = Modifier) {
     Column(modifier.padding(horizontal = 0.dp, vertical = 0.dp)) {
         Surface(
             Modifier.align(Alignment.CenterHorizontally).width(120.dp).wrapContentHeight()
