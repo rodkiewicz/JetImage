@@ -8,6 +8,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.core.content.FileProvider.getUriForFile
+import pl.mrodkiewicz.imageeditor.BuildConfig
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -35,6 +37,7 @@ fun Bitmap.saveImage(
         "pl.mrodkiewicz.imageeditor.fileprovider",
         file
     )
+
     try {
         val bmpOut = FileOutputStream(file)
         this.compress(Bitmap.CompressFormat.PNG, 100, bmpOut)
@@ -45,6 +48,16 @@ fun Bitmap.saveImage(
     return uri
 }
 
+fun getUriForCameraPhoto(context: Context): Uri? {
+    val imagePath: File = File(context.filesDir, "images")
+    if (!imagePath.exists()) {
+        imagePath.mkdirs()
+    }
+    val filename = "image.jpg"
+    val file = File(imagePath, filename)
+    return FileProvider.getUriForFile(context,
+        BuildConfig.APPLICATION_ID + ".provider", file)
+}
 fun addImageToGallery(context: Context, filePath: String) {
     val values = ContentValues()
 

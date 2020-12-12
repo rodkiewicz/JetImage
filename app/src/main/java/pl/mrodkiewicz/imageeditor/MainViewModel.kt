@@ -2,6 +2,8 @@ package pl.mrodkiewicz.imageeditor
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -19,6 +21,8 @@ import pl.mrodkiewicz.imageeditor.data.Filter
 import pl.mrodkiewicz.imageeditor.data.default_filters
 import pl.mrodkiewicz.imageeditor.processor.ImageProcessorManager
 import timber.log.Timber
+import java.io.InputStream
+
 
 class MainViewModel @ViewModelInject constructor(
     @ApplicationContext val context: Context,
@@ -64,8 +68,19 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
+    fun setBitmapUri(uri: Uri){
+        viewModelScope.launch {
+            withContext(Dispatchers.Default){
+                val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream?.close()
+                setBitmap(bitmap)
+            }
+        }
 
-    fun setBitmap(bitmap: Bitmap?) {
+    }
+
+    private fun setBitmap(bitmap: Bitmap?) {
         bitmap?.let {
             originalBitmap = it
             viewModelScope.launch(Dispatchers.Default) {
