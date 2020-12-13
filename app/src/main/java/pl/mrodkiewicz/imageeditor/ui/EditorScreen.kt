@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageAsset
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.WithConstraints
 import androidx.compose.ui.platform.AnimationClockAmbient
@@ -44,11 +45,7 @@ fun EditorScreen(mainViewModel: MainViewModel) {
                 )
             }
         }
-//                AddFilterDialog(
-//                    filters = mainViewModel.filters.value,
-//                    onAddFilter = {},
-//                    onDismiss = {},
-//                )
+
         EditorView(mainViewModel)
     }
 }
@@ -65,7 +62,6 @@ fun EditorView(mainViewModel: MainViewModel) {
         Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
             ImagePreview(mainViewModel,bitmap.value)
         }
-        Text(text = filters.value[0].value.toString(), color = Color.White)
         FilterControl(
             mainViewModel = mainViewModel,
             items = filters.value,
@@ -81,8 +77,9 @@ fun ImagePreview(mainViewModel: MainViewModel,bitmap: Bitmap?) {
         mainViewModel.setWidth(width = constraints.maxWidth)
         bitmap?.let {
             Image(
-                it.asImageAsset(),
-                contentScale = ContentScale.None
+                it.asImageBitmap(),
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = ContentScale.FillWidth
             )
         } ?: run {
             Text(
