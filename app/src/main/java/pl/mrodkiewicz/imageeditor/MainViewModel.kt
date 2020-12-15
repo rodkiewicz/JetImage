@@ -83,6 +83,7 @@ class MainViewModel @ViewModelInject constructor(
     private fun setBitmap(bitmap: Bitmap?) {
         bitmap?.let {
             originalBitmap = it
+            _filterPipeline.value = Pair(default_filters, default_filters[0])
             viewModelScope.launch(Dispatchers.Default) {
                 imageProcessorManager.setBitmap(originalBitmap)
             }
@@ -90,7 +91,9 @@ class MainViewModel @ViewModelInject constructor(
     }
 
     fun setWidth(width: Int) {
-        imageProcessorManager.setWidth(width, viewModelScope)
+        viewModelScope.launch {
+            imageProcessorManager.setWidth(width)
+        }
     }
 }
 

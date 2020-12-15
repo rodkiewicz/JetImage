@@ -38,12 +38,11 @@ class ImageProcessorManager(
     private val _outputBitmap = MutableStateFlow<Bitmap?>(null)
     val outputBitmap: StateFlow<Bitmap?> = _outputBitmap
 
-    fun setBitmap(bitmap: Bitmap) {
+    suspend fun setBitmap(bitmap: Bitmap) {
         originalBitmap = bitmap
         draftBitmap = originalBitmap.copy(originalBitmap.config, true)
-        _outputBitmap.value = draftBitmap
-        Timber.d("setBitmap ${bitmap.hashCode()}")
-
+        setWidth(width)
+        Timber.d("setBitmap ${bitmap.byteCount}")
     }
 
     suspend fun process(filters: Pair<ImmutableList<Filter>, Filter>) =
@@ -113,7 +112,7 @@ class ImageProcessorManager(
                     false
                 )
             Timber.d("resizeImage finished ${draftBitmap.width} ${draftBitmap.height}")
-            setBitmap(draftBitmap)
+            _outputBitmap.value = draftBitmap
         }
     }
 
@@ -123,23 +122,22 @@ class ImageProcessorManager(
 //        cachedBitmap?.recycle()
     }
 
-    fun setWidth(width: Int, scope: CoroutineScope) {
-        if(!::originalBitmap.isInitialized || !::draftBitmap.isInitialized){
+    suspend fun setWidth(width: Int) {
+        if (width != 0) {
+            this.width = width
+        }
+        if (!::originalBitmap.isInitialized || !::draftBitmap.isInitialized) {
             return
         }
-        if ((this.width != width) && (width != 0) && draftBitmap.width != this.width) {
-            this.width = width
+        if ((this.width != 0) && (draftBitmap.width != this.width)) {
             if (originalBitmap.width <= width || width == 0) {
                 Timber.d("resizeImage: originalBitmap.width <= width || width == 0")
             } else {
-                scope.launch {
-                    withContext(Dispatchers.Default) {
-                        resizeImage()
-                    }
+                withContext(Dispatchers.Default) {
+                    resizeImage()
                 }
             }
+
         }
-        this.width = width
-    }
 
 }
