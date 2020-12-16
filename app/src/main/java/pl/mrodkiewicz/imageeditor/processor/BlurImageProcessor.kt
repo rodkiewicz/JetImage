@@ -25,6 +25,8 @@ fun Bitmap.applyBlur(rs: RenderScript, filter: Filter): Bitmap {
     script.setInput(input)
     script.forEach(output)
     output.copyTo(newImage)
+    input.destroy()
+    output.destroy()
     Timber.d("applyBlur end time ${System.currentTimeMillis() - start}")
 
     return newImage

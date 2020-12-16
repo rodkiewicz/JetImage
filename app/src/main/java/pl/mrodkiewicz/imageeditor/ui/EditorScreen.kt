@@ -1,13 +1,12 @@
 package pl.mrodkiewicz.imageeditor.ui
 
 import android.graphics.Bitmap
+import android.graphics.Paint
 import android.util.DisplayMetrics
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
@@ -26,27 +25,57 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import pl.mrodkiewicz.imageeditor.MainViewModel
+import pl.mrodkiewicz.imageeditor.R
 import pl.mrodkiewicz.imageeditor.data.Filter
 
 @Composable
 fun EditorScreen(mainViewModel: MainViewModel) {
-    Column(Modifier.background(Color.Yellow)) {
+    Column() {
         Surface(
             Modifier.fillMaxWidth().height(56.dp).background(MaterialTheme.colors.primary)
         ) {
             Row(
                 Modifier.background(MaterialTheme.colors.secondary)
-                    .align(Alignment.CenterHorizontally).padding(start = 8.dp)
+                    .align(Alignment.CenterHorizontally).padding(start = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = "JetEditor",
                     style = actionBarTextStyle,
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
+                Row( verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center) {
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Image(
+                            imageVector = vectorResource(R.drawable.ic_baseline_done_24),
+                            colorFilter = ColorFilter.tint(Color(235, 183, 22)),
+                            modifier = Modifier.width(24.dp).height(24.dp)
+                        )
+                    }
+                }
+
             }
         }
-
         EditorView(mainViewModel)
+        BottomAppBar(Modifier.fillMaxWidth(), backgroundColor = Color.Cyan) {
+            Image(
+                imageVector = vectorResource(R.drawable.ic_baseline_done_24),
+                colorFilter = ColorFilter.tint(Color(235, 183, 22)),
+                modifier = Modifier.width(24.dp).height(24.dp)
+            )
+            Image(
+                imageVector = vectorResource(R.drawable.ic_add_a_photo_24),
+                colorFilter = ColorFilter.tint(Color(235, 183, 22)),
+                modifier = Modifier.width(24.dp).height(24.dp)
+            )
+            Image(
+                imageVector = vectorResource(R.drawable.ic_baseline_camera_alt_24),
+                colorFilter = ColorFilter.tint(Color(235, 183, 22)),
+                modifier = Modifier.width(24.dp).height(24.dp)
+            )
+        }
     }
 }
 
@@ -56,8 +85,6 @@ fun EditorView(mainViewModel: MainViewModel) {
     val pagerState = remember(clock) { EditorPagerState(clock) }
     val filters = mainViewModel.filters.collectAsState()
     val bitmap = mainViewModel.bitmap.observeAsState()
-
-
     Box {
         Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
             ImagePreview(mainViewModel,bitmap.value)
@@ -68,7 +95,9 @@ fun EditorView(mainViewModel: MainViewModel) {
             pagerState = pagerState,
             modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight()
         )
+
     }
+
 }
 
 @Composable

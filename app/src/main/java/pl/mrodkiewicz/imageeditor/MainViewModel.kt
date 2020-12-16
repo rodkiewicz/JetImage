@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.compose.ui.res.imageResource
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -33,22 +34,23 @@ class MainViewModel @ViewModelInject constructor(
     val bitmap: LiveData<Bitmap> = _bitmap
     private val _filters = MutableStateFlow(default_filters)
     val filters: StateFlow<ImmutableList<Filter>> = _filters
+    private var startTime = 0L
 
-
-    private lateinit var originalBitmap: Bitmap
     private val _filterPipeline: MutableStateFlow<Pair<ImmutableList<Filter>, Filter>> =
         MutableStateFlow(Pair(default_filters, default_filters[0]))
 
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            _filterPipeline.onEach { _filters.value = it.first }.debounce(250L).collect {
+            _filterPipeline.onEach { _filters.value = it.first }.debounce(25L).collect {
+                startTime = System.currentTimeMillis()
                 imageProcessorManager.process(it)
             }
         }
-        viewModelScope.launch(Dispatchers.Default){
+        viewModelScope.launch(Dispatchers.Default) {
             imageProcessorManager.outputBitmap.collect {
                 Timber.d("outputBitmap ${it.hashCode()}")
+                Timber.d("time outputBitmap ${System.currentTimeMillis() - startTime}")
                 it?.let {
                     withContext(Dispatchers.Main) {
                         _bitmap.value = it
@@ -68,32 +70,25 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
-    fun setBitmapUri(uri: Uri){
+    fun setBitmapUri(uri: Uri) {
         viewModelScope.launch {
-            withContext(Dispatchers.Default){
-                val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
-                setBitmap(bitmap)
+            withContext(Dispatchers.Default) {
+                imageProcessorManager.setBitmapUri(uri)
+                _filterPipeline.value = Pair(default_filters, default_filters[0])
             }
         }
 
-    }
-
-    private fun setBitmap(bitmap: Bitmap?) {
-        bitmap?.let {
-            originalBitmap = it
-            _filterPipeline.value = Pair(default_filters, default_filters[0])
-            viewModelScope.launch(Dispatchers.Default) {
-                imageProcessorManager.setBitmap(originalBitmap)
-            }
-        }
     }
 
     fun setWidth(width: Int) {
         viewModelScope.launch {
             imageProcessorManager.setWidth(width)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        imageProcessorManager.cleanup()
     }
 }
 

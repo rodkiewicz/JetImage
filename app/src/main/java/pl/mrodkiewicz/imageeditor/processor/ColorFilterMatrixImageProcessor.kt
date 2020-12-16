@@ -22,24 +22,12 @@ fun Bitmap.applyFilters(rs: RenderScript, filter: Filter): Bitmap {
     var script = ScriptIntrinsicColorMatrix.create(rs, Element.U8_4(rs))
     var matrix = Matrix3f(filter.filterMatrix.matrix)
     matrix.serPercentageForMatrix(filter.value)
+    Timber.d("image processor setColorMatrix")
     script.setColorMatrix(matrix)
     script.forEach(input, output)
     output.copyTo(newImage)
-    Timber.d("applyFilters ${filter.name} ${filter.value}")
-    Timber.d(
-        "bitmap value r ${Color(newImage.getPixel(100, 100)).red} g ${
-            Color(
-                newImage.getPixel(
-                    100,
-                    100
-                )
-            ).green
-        } b ${Color(newImage.getPixel(100, 100)).blue}"
-    )
-
     input.destroy()
     output.destroy()
-    rs.destroy()
     return newImage
 }
 
