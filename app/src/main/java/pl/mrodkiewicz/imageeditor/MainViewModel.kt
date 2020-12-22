@@ -72,17 +72,21 @@ class MainViewModel @ViewModelInject constructor(
 
     fun setBitmapUri(uri: Uri) {
         viewModelScope.launch {
-            withContext(Dispatchers.Default) {
                 imageProcessorManager.setBitmapUri(uri)
                 _filterPipeline.value = Pair(default_filters, default_filters[0])
-            }
         }
-
     }
 
     fun setWidth(width: Int) {
         viewModelScope.launch {
             imageProcessorManager.setWidth(width)
+        }
+    }
+
+    fun save(onSaved: (uri: Uri)->Unit){
+        viewModelScope.launch {
+            onSaved.invoke(imageProcessorManager.save(_filters.value))
+            Timber.d("imageProcessorManager save ${_filters.value}")
         }
     }
 

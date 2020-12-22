@@ -1,13 +1,9 @@
 package pl.mrodkiewicz.imageeditor.processor
 
 import android.content.Context
-import android.database.Cursor
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.net.Uri
-import android.provider.MediaStore
-import androidx.exifinterface.media.ExifInterface
+import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.*
@@ -15,9 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import pl.mrodkiewicz.imageeditor.data.Filter
 import pl.mrodkiewicz.imageeditor.data.FilterMatrix
-import pl.mrodkiewicz.imageeditor.helpers.decodeExifOrientation
+import pl.mrodkiewicz.imageeditor.helpers.*
 import timber.log.Timber
-import java.io.InputStream
 import java.util.*
 
 
@@ -27,7 +22,7 @@ class ImageProcessorManager(
     val blurIP: BlurImageProcessor,
     @ApplicationContext val context: Context
 ) {
-    private var originalBitmap: Bitmap? = null
+    private lateinit var bitmapUri: Uri
 
     // bitmap resized to device pixel dimensions
     private var draftBitmap: Bitmap? = null
@@ -47,33 +42,17 @@ class ImageProcessorManager(
     val outputBitmap: StateFlow<Bitmap?> = _outputBitmap
 
     suspend fun setBitmapUri(uri: Uri) {
-        originalBitmap = null
-        draftBitmap = null
-        _outputBitmap.value = null
-
-        var inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-        val exif = inputStream?.let { it1 -> ExifInterface(it1)}
-        var orientation = exif?.getAttributeInt(
-            ExifInterface.TAG_ORIENTATION,
-            ExifInterface.ORIENTATION_NORMAL
-        ) ?: 0
-        val matrix = decodeExifOrientation(orientation)
-        inputStream?.close()
-        inputStream = context.contentResolver.openInputStream(uri)
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        setBitmap(
-            Bitmap.createBitmap(
-                bitmap, 0, 0, bitmap.width,
-                bitmap.height, matrix, true
-            )
-        )
-
-
+        withContext(Dispatchers.IO) {
+            draftBitmap = null
+            _outputBitmap.value = null
+            bitmapUri = uri
+            setBitmap(uri.loadBitmap(context))
+        }
     }
 
+
     private suspend fun setBitmap(bitmap: Bitmap) {
-        originalBitmap = bitmap
-        draftBitmap = originalBitmap?.copy(originalBitmap?.config, true)
+        draftBitmap = bitmap.copy(bitmap.config, true)
         setWidth(width)
         Timber.d("setBitmap ${bitmap.byteCount}")
     }
@@ -114,6 +93,41 @@ class ImageProcessorManager(
             }
         }
 
+    suspend fun save(filters: ImmutableList<Filter>): Uri =
+        withContext(Dispatchers.Default) {
+            bitmapUri.loadBitmap(context).let { bmp ->
+                val bitmaps = bmp.divideIntoTiles(4)
+                val outputBitmaps = mutableListOf<Bitmap>()
+                bitmaps.forEach { bitmap ->
+                    var outputBitmap = bitmap.copy(bitmap.config, true)
+                    filters.forEach {
+                        if (it.value > 0) {
+                            outputBitmap = processBitmap(outputBitmap, it)
+                        }
+                    }
+                    outputBitmap.let { it1 -> outputBitmaps.add(it1) }
+                    bitmap.recycle()
+                }
+                var output = createPictureUri(context, "output", "output")
+                withContext(Dispatchers.IO) {
+                    var startTime = System.currentTimeMillis()
+                    SampleTileImage.doTiling(outputBitmaps.mapIndexed { index, it ->
+                        it.saveImage(
+                            context,
+                            "jetimage",
+                            "jetimage00000${index}"
+                        )
+                    }.toTypedArray(),output.absolutePath,4)
+                    Timber.d("to trwalo ${(System.currentTimeMillis() - startTime)/1000}")
+                    addImageToGallery(context,output.absolutePath)
+                }
+                FileProvider.getUriForFile(
+                    context,
+                    "pl.mrodkiewicz.imageeditor.provider",
+                    output
+                )
+            }
+        }
 
     private fun processBitmap(bitmap: Bitmap, filters: Filter): Bitmap {
         Timber.d("process $filters")
@@ -139,7 +153,7 @@ class ImageProcessorManager(
 
         withContext(imageProcessorScope) {
             draftBitmap =
-                originalBitmap?.let {
+                draftBitmap?.let {
                     Bitmap.createScaledBitmap(
                         it,
                         width,
@@ -153,10 +167,8 @@ class ImageProcessorManager(
     }
 
     fun cleanup() {
-        originalBitmap?.recycle()
         draftBitmap?.recycle()
         cachedBitmap?.recycle()
-        originalBitmap = null
         draftBitmap = null
         _outputBitmap.value = null
     }
@@ -165,20 +177,21 @@ class ImageProcessorManager(
         if (width != 0) {
             this.width = width
         }
-        originalBitmap?.let { originalBitmap ->
-            draftBitmap?.let { draftBitmap->
-                if ((this.width != 0) && (draftBitmap.width != this.width)) {
-                    if (originalBitmap.width <= width || width == 0) {
-                        Timber.d("resizeImage: originalBitmap.width <= width || width == 0")
-                    } else {
-                        withContext(Dispatchers.Default) {
-                            resizeImage()
-                        }
+        draftBitmap?.let { draftBitmap ->
+            if ((this.width != 0) && (draftBitmap.width != this.width)) {
+                if (draftBitmap.width <= width || width == 0) {
+                    Timber.d("resizeImage: originalBitmap.width <= width || width == 0")
+                } else {
+                    withContext(Dispatchers.Default) {
+                        resizeImage()
                     }
-
                 }
+
             }
         }
-
     }
 }
+
+
+
+

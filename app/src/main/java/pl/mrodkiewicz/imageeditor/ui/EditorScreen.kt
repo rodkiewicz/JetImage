@@ -1,12 +1,14 @@
 package pl.mrodkiewicz.imageeditor.ui
 
+import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Paint
-import android.util.DisplayMetrics
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRowFor
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
@@ -15,22 +17,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.asImageAsset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.WithConstraints
-import androidx.compose.ui.platform.AnimationClockAmbient
+import androidx.compose.ui.platform.AmbientAnimationClock
+import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startActivity
 import pl.mrodkiewicz.imageeditor.MainViewModel
 import pl.mrodkiewicz.imageeditor.R
 import pl.mrodkiewicz.imageeditor.data.Filter
 
 @Composable
 fun EditorScreen(mainViewModel: MainViewModel) {
-    Column() {
+    val context = AmbientContext.current
+    Column {
         Surface(
             Modifier.fillMaxWidth().height(56.dp).background(MaterialTheme.colors.primary)
         ) {
@@ -45,9 +50,19 @@ fun EditorScreen(mainViewModel: MainViewModel) {
                     style = actionBarTextStyle,
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
-                Row( verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center) {
-                    IconButton(onClick = { /*TODO*/ }) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    IconButton(onClick = {
+                        mainViewModel.save { uri ->
+                            startActivity(
+                                context,
+                                Intent(Intent.ACTION_VIEW, uri),
+                                null
+                            )
+                        }
+                    }) {
                         Image(
                             imageVector = vectorResource(R.drawable.ic_baseline_done_24),
                             colorFilter = ColorFilter.tint(Color(235, 183, 22)),
@@ -59,56 +74,52 @@ fun EditorScreen(mainViewModel: MainViewModel) {
             }
         }
         EditorView(mainViewModel)
-        BottomAppBar(Modifier.fillMaxWidth(), backgroundColor = Color.Cyan) {
-            Image(
-                imageVector = vectorResource(R.drawable.ic_baseline_done_24),
-                colorFilter = ColorFilter.tint(Color(235, 183, 22)),
-                modifier = Modifier.width(24.dp).height(24.dp)
-            )
-            Image(
-                imageVector = vectorResource(R.drawable.ic_add_a_photo_24),
-                colorFilter = ColorFilter.tint(Color(235, 183, 22)),
-                modifier = Modifier.width(24.dp).height(24.dp)
-            )
-            Image(
-                imageVector = vectorResource(R.drawable.ic_baseline_camera_alt_24),
-                colorFilter = ColorFilter.tint(Color(235, 183, 22)),
-                modifier = Modifier.width(24.dp).height(24.dp)
-            )
-        }
     }
 }
 
 @Composable
 fun EditorView(mainViewModel: MainViewModel) {
-    val clock = AnimationClockAmbient.current
+    val clock = AmbientAnimationClock.current
     val pagerState = remember(clock) { EditorPagerState(clock) }
     val filters = mainViewModel.filters.collectAsState()
     val bitmap = mainViewModel.bitmap.observeAsState()
-    Box {
-        Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
-            ImagePreview(mainViewModel,bitmap.value)
-        }
-        FilterControl(
-            mainViewModel = mainViewModel,
-            items = filters.value,
-            pagerState = pagerState,
-            modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight()
-        )
+    Column() {
+        Box(Modifier.weight(1f)) {
+            Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
+                ImagePreview(mainViewModel, bitmap.value)
+            }
+            FilterControl(
+                mainViewModel = mainViewModel,
+                items = filters.value,
+                pagerState = pagerState,
+                modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight()
+            )
 
+        }
+        Row(Modifier.fillMaxWidth().height(140.dp).background(Color.DarkGray)) {
+            IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.weight(0.1f)) {
+                Icon(Icons.Filled.ArrowBack, tint = Color.White)
+            }
+            LazyRowFor(items = listOf<String>("essa", "eluwina","essa", "eluwina","essa", "eluwina","essa", "eluwina","essa", "eluwina","essa", "eluwina",), modifier = Modifier.weight(0.8f)) { item ->
+                Text(text = item, fontSize = 24.sp, modifier = Modifier.padding(8.dp), color = Color.White)
+            }
+            IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.weight(0.1f)) {
+                Icon(Icons.Filled.ArrowForward, tint = Color.White)
+            }
+        }
     }
 
 }
 
 @Composable
-fun ImagePreview(mainViewModel: MainViewModel,bitmap: Bitmap?) {
+fun ImagePreview(mainViewModel: MainViewModel, bitmap: Bitmap?) {
     WithConstraints {
         mainViewModel.setWidth(width = constraints.maxWidth)
         bitmap?.let {
             Image(
                 it.asImageBitmap(),
                 modifier = Modifier.fillMaxWidth(),
-                contentScale = ContentScale.FillWidth
+                contentScale = ContentScale.Inside
             )
         } ?: run {
             Text(
@@ -131,7 +142,7 @@ fun FilterControl(
     mainViewModel: MainViewModel,
     items: List<Filter>,
     pagerState: EditorPagerState = run {
-        val clock = AnimationClockAmbient.current
+        val clock = AmbientAnimationClock.current
         remember(clock) { EditorPagerState(clock) }
     }
 ) {
@@ -180,14 +191,14 @@ private fun EditorPagerItem(filter: Filter, modifier: Modifier = Modifier) {
                         Modifier.padding(top = 8.dp)
                             .align(Alignment.CenterHorizontally),
                         Color.Unspecified,
-                        TextUnit.Inherit,
+                        TextUnit.Unspecified,
                         null,
                         null,
                         null,
-                        TextUnit.Inherit,
+                        TextUnit.Unspecified,
                         null,
                         null,
-                        TextUnit.Inherit,
+                        TextUnit.Unspecified,
                         TextOverflow.Ellipsis,
                         true,
                         1,
