@@ -18,6 +18,7 @@ import ar.com.hjg.pngj.PngWriter
 import ar.com.hjg.pngj.chunks.ChunkCopyBehaviour
 import ar.com.hjg.pngj.chunks.ChunkLoadBehaviour
 import pl.mrodkiewicz.imageeditor.BuildConfig
+import pl.mrodkiewicz.imageeditor.data.LutFilter
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -193,3 +194,23 @@ fun addImageToGallery(context: Context, filePath: String) {
     context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 }
 
+fun Bitmap.convertToLutFilter(name: String): LutFilter {
+    var lut = LutFilter(name)
+    var x = width / height
+    var lutList = mutableListOf<Int>()
+    lut.x = x
+    lut.y = lut.x
+    lut.z = lut.x
+    var pixels = IntArray(width * height)
+    getPixels(pixels, 0, width, 0, 0, width, height)
+    for (r in 0 until x) {
+        for (g in 0 until x) {
+            val p: Int = r + g * width
+            for (b in 0 until x) {
+                lutList.add(pixels[p + b * height])
+            }
+        }
+    }
+    lut.lutFilter = lutList.toIntArray()
+    return lut
+}

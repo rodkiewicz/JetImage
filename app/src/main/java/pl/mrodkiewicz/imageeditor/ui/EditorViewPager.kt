@@ -2,11 +2,14 @@ package pl.mrodkiewicz.imageeditor.ui
 
 import androidx.compose.animation.animate
 import androidx.compose.animation.core.AnimationClockObservable
+import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.rememberScrollableController
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawOpacity
 import androidx.compose.ui.gesture.doubleTapGestureFilter
 import androidx.compose.ui.gesture.longPressGestureFilter
@@ -78,11 +81,11 @@ fun EditorPager(
     state: EditorPagerState,
     offscreenLimit: Int = 10,
     onValueChange: (Int, Float) -> Unit,
+    visible: Boolean = false,
     pageContent: @Composable() (EditorPagerScope.() -> Unit),
 ) {
     var pageSize by remember { mutableStateOf(0) }
-    val visibility = remember { mutableStateOf(false) }
-    val opacity = animate(if (visibility.value) 1f else 0f)
+    val opacity = animate(if (visible) 1f else 0f)
 
     Layout(
         content = {
@@ -101,27 +104,21 @@ fun EditorPager(
         },
 
         modifier = modifier
-            .doubleTapGestureFilter {
-                visibility.value = !visibility.value
-            }
-            .longPressGestureFilter {
-                visibility.value = !visibility.value
-            }
-            .drawOpacity(opacity = opacity)
+            .alpha(opacity)
             .scrollable(Orientation.Vertical, rememberScrollableController {
-                if (visibility.value) {
+                if (visible) {
+                   0f
+                } else {
                     state.currentOffset += it
                     it
-                } else {
-                    0f
                 }
             }).scrollable(
                 orientation = Orientation.Horizontal, rememberScrollableController {
-                    if (visibility.value) {
+                    if (visible) {
+                        0f
+                    } else {
                         onValueChange.invoke(state.currentPage, it)
                         it
-                    } else {
-                        0f
                     }
                 }
             ),

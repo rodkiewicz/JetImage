@@ -11,17 +11,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.window.Dialog
-import pl.mrodkiewicz.imageeditor.data.Filter
+import pl.mrodkiewicz.imageeditor.data.AdjustFilter
 
 @Composable
 fun AddFilterDialog(
-    filters: List<Filter>,
-    onAddFilter: (Filter) -> Unit,
+    adjustFilters: List<AdjustFilter>,
+    onAddFilter: (AdjustFilter) -> Unit,
     onDismiss: () -> Unit
 ) {
 
     Dialog(onDismissRequest = onDismiss) {
-        LazyColumnFor(items = filters.toList()) {
+        LazyColumnFor(items = adjustFilters.toList()) {
             Column(modifier = Modifier.clickable(onClick = { onAddFilter.invoke(it) })) {
                 Text(
                     "Item ${it.name}",

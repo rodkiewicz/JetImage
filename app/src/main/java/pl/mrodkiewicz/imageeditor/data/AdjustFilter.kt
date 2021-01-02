@@ -7,44 +7,44 @@ import pl.mrodkiewicz.imageeditor.R
 import java.util.*
 
 @Immutable
-data class Filter(
+data class AdjustFilter(
     val id: UUID = UUID.randomUUID(),
     val name: String = "",
     val value: Int = 0,
     val icon: Int = 0,
-    val filterMatrix: FilterMatrix = FilterMatrix.ColorFilter(nonFilteredMatrix),
+    val filterMatrix: FilterType = FilterType.ColorFilter(nonFilteredMatrix),
     val customColor: Color = Color.Yellow,
     val maxValue: Int = 100,
     val minValue: Int = 0,
 )
 
-sealed class FilterMatrix(val matrix: FloatArray) {
+sealed class FilterType(val matrix: FloatArray) {
     data class ColorFilter(
         var colorMatrix: FloatArray,
         var calculateNewMatrix: (FloatArray, Int) -> FloatArray = { matrix, update ->
             matrix.serPercentageForMatrix(update)
         }
-    ) : FilterMatrix(colorMatrix)
+    ) : FilterType(colorMatrix)
 
     data class Convolve3x3(
         val convolveMatrix: FloatArray,
         var calculateNewMatrix: (FloatArray, Int) -> FloatArray = { matrix, update ->
             matrix
         }
-    ) : FilterMatrix(convolveMatrix)
+    ) : FilterType(convolveMatrix)
 
     data class Convolve5x5(
         val convolveMatrix: FloatArray,
         var calculateNewMatrix: (FloatArray, Int) -> FloatArray = { matrix, update ->
             matrix
         }
-    ) : FilterMatrix(convolveMatrix)
+    ) : FilterType(convolveMatrix)
 
     data class Blur(
         var validateValue: (Int) -> Float = { value ->
             (value / 100f * 25f).coerceAtLeast(1f).coerceAtMost(25f)
         }
-    ) : FilterMatrix(nonFilteredMatrix)
+    ) : FilterType(nonFilteredMatrix)
 
 }
 
@@ -133,29 +133,29 @@ fun Float.getPercentageFromZero(percentage: Int): Float {
     return (this / 100 * percentage)
 }
 
-val default_filters = mutableListOf(
-    Filter(
+val default_adjust_filters = mutableListOf(
+    AdjustFilter(
         name = "Red",
         value = 0,
-        filterMatrix = FilterMatrix.ColorFilter(redMatrix),
+        filterMatrix = FilterType.ColorFilter(redMatrix),
         icon = R.drawable.ic_filter_24
     ),
-    Filter(
+    AdjustFilter(
         name = "Green",
         value = 0,
-        filterMatrix = FilterMatrix.ColorFilter(greenMatrix),
+        filterMatrix = FilterType.ColorFilter(greenMatrix),
         icon = R.drawable.ic_filter_24
     ),
-    Filter(
+    AdjustFilter(
         name = "Blue",
         value = 0,
-        filterMatrix = FilterMatrix.ColorFilter(blueMatrix),
+        filterMatrix = FilterType.ColorFilter(blueMatrix),
         icon = R.drawable.ic_filter_24
     ),
-    Filter(
+    AdjustFilter(
         name = "Blur",
         value = 1,
-        filterMatrix = FilterMatrix.Blur(),
+        filterMatrix = FilterType.Blur(),
         icon = R.drawable.ic_filter_24
     ),
 //    Filter(

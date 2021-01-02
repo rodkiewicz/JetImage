@@ -2,15 +2,19 @@ package pl.mrodkiewicz.imageeditor.processor
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import pl.mrodkiewicz.imageeditor.data.Filter
-import pl.mrodkiewicz.imageeditor.data.FilterMatrix
+import pl.mrodkiewicz.imageeditor.R
+import pl.mrodkiewicz.imageeditor.data.AdjustFilter
+import pl.mrodkiewicz.imageeditor.data.FilterType
+import pl.mrodkiewicz.imageeditor.data.LutFilter
 import pl.mrodkiewicz.imageeditor.helpers.*
 import timber.log.Timber
 import java.util.*
@@ -20,6 +24,7 @@ class ImageProcessorManager(
     val convolutionMIP: ConvolutionMatrixImageProcessor,
     val colorFilterMIP: ColorFilterMatrixImageProcessor,
     val blurIP: BlurImageProcessor,
+    val lutIP: LutImageProcessor,
     @ApplicationContext val context: Context
 ) {
     private lateinit var bitmapUri: Uri
@@ -36,10 +41,16 @@ class ImageProcessorManager(
     private val handler = CoroutineExceptionHandler { _, exception ->
         Timber.e("ImageProcessorManager got $exception")
     }
+
     private var job: CompletableJob = Job()
     private var imageProcessorScope = Dispatchers.Default + handler
     private val _outputBitmap = MutableStateFlow<Bitmap?>(null)
     val outputBitmap: StateFlow<Bitmap?> = _outputBitmap
+
+    private val _lutOutput = MutableStateFlow<ImmutableList<Pair<Bitmap,LutFilter>>?>(null)
+    val lutOutput: StateFlow<ImmutableList<Pair<Bitmap,LutFilter>>?> = _lutOutput
+
+
 
     suspend fun setBitmapUri(uri: Uri) {
         withContext(Dispatchers.IO) {
@@ -54,33 +65,34 @@ class ImageProcessorManager(
     private suspend fun setBitmap(bitmap: Bitmap) {
         draftBitmap = bitmap.copy(bitmap.config, true)
         setWidth(width)
+        getLutThumbnail()
         Timber.d("setBitmap ${bitmap.byteCount}")
     }
 
-    suspend fun process(filters: Pair<ImmutableList<Filter>, Filter>) =
+    suspend fun processAdjustFilter(filter: Pair<ImmutableList<AdjustFilter>, AdjustFilter>) =
         withContext(imageProcessorScope) {
             draftBitmap?.let { draftBitmap ->
-                if (filters.second.id.equals(cachedFilterID) && cachedBitmap != null) {
+                if (filter.second.id.equals(cachedFilterID) && cachedBitmap != null) {
                     cachedBitmap?.let {
                         var bitmap = it.copy(it.config, true)
                         bitmap?.let {
-                            bitmap = processBitmap(bitmap, filters.second)
+                            bitmap = processBitmap(bitmap, filter.second)
                         }
-                        filters.first.subList(cacheIndex + 1, filters.first.lastIndex + 1).forEach {
+                        filter.first.subList(cacheIndex + 1, filter.first.lastIndex + 1).forEach {
                             if (it.value > 0) {
                                 bitmap = processBitmap(bitmap, it)
                             }
                         }
                         _outputBitmap.value = bitmap
-                        cache(it, filters.second.id, cacheIndex)
+                        cache(it, filter.second.id, cacheIndex)
                     }
                     return@withContext
                 } else {
                     var bitmap = draftBitmap.copy(draftBitmap.config, true)
                     bitmap?.let {
-                        filters.first.forEachIndexed { index, it ->
-                            if (it.id.equals(filters.second.id)) {
-                                cache(bitmap, filters.second.id, index)
+                        filter.first.forEachIndexed { index, it ->
+                            if (it.id.equals(filter.second.id)) {
+                                cache(bitmap, filter.second.id, index)
                             }
                             if (it.value > 0) {
                                 bitmap = processBitmap(bitmap, it)
@@ -93,14 +105,66 @@ class ImageProcessorManager(
             }
         }
 
-    suspend fun save(filters: ImmutableList<Filter>): Uri =
+    suspend fun processLutFilter(lutFilter: LutFilter?) {
+        withContext(imageProcessorScope) {
+            draftBitmap?.let { draftBitmap ->
+                lutFilter?.let { lutFilter ->
+                    var bitmap = draftBitmap.copy(draftBitmap.config, true)
+                    bitmap?.let {
+                        bitmap = processBitmap(bitmap, lutFilter)
+                        lutFilter?.let { it1 ->Timber.d("processLutFilter ${lutFilter}")}
+                        _outputBitmap.value = bitmap
+                    }
+                } ?: run{
+                    var bitmap = draftBitmap.copy(draftBitmap.config, true)
+                    _outputBitmap.value = bitmap
+                }
+            }
+        }
+    }
+
+    private fun getLutFilters(): List<LutFilter>{
+        var listOfDrawables = listOf(
+            R.drawable.lut_bleach,
+            R.drawable.lut_blue_crush,
+            R.drawable.lut_bw_contrast,
+            R.drawable.lut_instant,
+            R.drawable.lut_punch,
+            R.drawable.lut_vintage,
+            R.drawable.lut_washout,
+            R.drawable.lut_washout_color,
+            R.drawable.lut_x_process
+        ).map {
+            BitmapFactory.decodeResource(context.resources, it).convertToLutFilter("essa")
+        }
+        return listOfDrawables.toImmutableList()
+    }
+
+    private fun getLutThumbnail(){
+        var lutFilters = getLutFilters()
+        var list = mutableListOf<Pair<Bitmap, LutFilter>>()
+        draftBitmap?.let {
+            var thumbnailBitmap = Bitmap.createScaledBitmap(
+                it,
+                100,
+                it.height * 100 / it.width,
+                false
+            )
+            lutFilters.forEach {
+                list.add(Pair(processBitmap(thumbnailBitmap, it), it))
+            }
+        }
+        _lutOutput.value = list.toImmutableList()
+    }
+
+    suspend fun save(adjustFilters: ImmutableList<AdjustFilter>): Uri =
         withContext(Dispatchers.Default) {
             bitmapUri.loadBitmap(context).let { bmp ->
                 val bitmaps = bmp.divideIntoTiles(4)
                 val outputBitmaps = mutableListOf<Bitmap>()
                 bitmaps.forEach { bitmap ->
                     var outputBitmap = bitmap.copy(bitmap.config, true)
-                    filters.forEach {
+                    adjustFilters.forEach {
                         if (it.value > 0) {
                             outputBitmap = processBitmap(outputBitmap, it)
                         }
@@ -117,9 +181,9 @@ class ImageProcessorManager(
                             "jetimage",
                             "jetimage00000${index}"
                         )
-                    }.toTypedArray(),output.absolutePath,4)
-                    Timber.d("to trwalo ${(System.currentTimeMillis() - startTime)/1000}")
-                    addImageToGallery(context,output.absolutePath)
+                    }.toTypedArray(), output.absolutePath, 4)
+                    Timber.d("to trwalo ${(System.currentTimeMillis() - startTime) / 1000}")
+                    addImageToGallery(context, output.absolutePath)
                 }
                 FileProvider.getUriForFile(
                     context,
@@ -129,16 +193,19 @@ class ImageProcessorManager(
             }
         }
 
-    private fun processBitmap(bitmap: Bitmap, filters: Filter): Bitmap {
-        Timber.d("process $filters")
-        return when (filters.filterMatrix) {
-            is FilterMatrix.ColorFilter -> colorFilterMIP.loadFilter(bitmap, filters)
-            is FilterMatrix.Blur -> blurIP.loadBlur(bitmap, filters)
-            is FilterMatrix.Convolve5x5, is FilterMatrix.Convolve3x3 -> convolutionMIP.loadFilter(
+    private fun processBitmap(bitmap: Bitmap, filter: AdjustFilter): Bitmap {
+        return when (filter.filterMatrix) {
+            is FilterType.ColorFilter -> colorFilterMIP.loadFilter(bitmap, filter)
+            is FilterType.Blur -> blurIP.loadBlur(bitmap, filter)
+            is FilterType.Convolve5x5, is FilterType.Convolve3x3 -> convolutionMIP.loadFilter(
                 bitmap,
-                filters
+                filter
             )
         }
+    }
+
+    private fun processBitmap(bitmap: Bitmap, filter: LutFilter): Bitmap {
+        return lutIP.loadFilter(bitmap, filter)
     }
 
     fun cache(bitmap: Bitmap, filterId: UUID, filterIndex: Int) {

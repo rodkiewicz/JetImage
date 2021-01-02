@@ -2,51 +2,51 @@ package pl.mrodkiewicz.imageeditor.processor
 
 import android.graphics.Bitmap
 import androidx.renderscript.*
-import pl.mrodkiewicz.imageeditor.data.Filter
-import pl.mrodkiewicz.imageeditor.data.FilterMatrix
+import pl.mrodkiewicz.imageeditor.data.AdjustFilter
+import pl.mrodkiewicz.imageeditor.data.FilterType
 import timber.log.Timber
 
 class ConvolutionMatrixImageProcessor(
     val renderScript: RenderScript,
 ) {
-     fun loadFilter(bitmap: Bitmap, filter: Filter): Bitmap =
-        bitmap.applyConvolution(renderScript, filter)
+     fun loadFilter(bitmap: Bitmap, adjustFilter: AdjustFilter): Bitmap =
+        bitmap.applyConvolution(renderScript, adjustFilter)
 
 }
 
-fun Bitmap.applyConvolution(rs: RenderScript, filter: Filter): Bitmap {
+fun Bitmap.applyConvolution(rs: RenderScript, adjustFilter: AdjustFilter): Bitmap {
     val newImage = this.copy(Bitmap.Config.ARGB_8888, true)
     val input = Allocation.createFromBitmap(rs, newImage)
     val output: Allocation = Allocation.createTyped(rs, input.type)
     var script: ScriptIntrinsic? = null
-    when (filter.filterMatrix) {
-        is FilterMatrix.Convolve3x3 -> {
+    when (adjustFilter.filterMatrix) {
+        is FilterType.Convolve3x3 -> {
             Timber.d("image processor Convolve3x3")
             script = ScriptIntrinsicConvolve3x3.create(rs, Element.U8_4(rs))
             script.setCoefficients(
-                filter.filterMatrix.calculateNewMatrix(
-                    filter.filterMatrix.matrix,
-                    filter.value
+                adjustFilter.filterMatrix.calculateNewMatrix(
+                    adjustFilter.filterMatrix.matrix,
+                    adjustFilter.value
                 )
             )
             script.setInput(input)
-            repeat((filter.value / 10).toInt()) {
+            repeat((adjustFilter.value / 10).toInt()) {
                 (script as ScriptIntrinsicConvolve3x3?)?.forEach(input)
             }
             script.forEach(input)
             output.copyTo(newImage)
         }
-        is FilterMatrix.Convolve5x5 -> {
+        is FilterType.Convolve5x5 -> {
             Timber.d("image processor Convolve5x5")
             script = ScriptIntrinsicConvolve5x5.create(rs, Element.U8_4(rs))
             script.setCoefficients(
-                filter.filterMatrix.calculateNewMatrix(
-                    filter.filterMatrix.matrix,
-                    filter.value
+                adjustFilter.filterMatrix.calculateNewMatrix(
+                    adjustFilter.filterMatrix.matrix,
+                    adjustFilter.value
                 )
             )
             script.setInput(input)
-            repeat(filter.value) {
+            repeat(adjustFilter.value) {
                 script.forEach(input)
             }
             output.copyTo(newImage)

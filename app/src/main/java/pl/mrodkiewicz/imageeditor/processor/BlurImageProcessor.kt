@@ -5,29 +5,24 @@ import androidx.renderscript.Allocation
 import androidx.renderscript.Element
 import androidx.renderscript.RenderScript
 import androidx.renderscript.ScriptIntrinsicBlur
-import pl.mrodkiewicz.imageeditor.data.Filter
-import pl.mrodkiewicz.imageeditor.data.FilterMatrix
-import timber.log.Timber
+import pl.mrodkiewicz.imageeditor.data.AdjustFilter
+import pl.mrodkiewicz.imageeditor.data.FilterType
 
 class BlurImageProcessor(val renderScript: RenderScript) {
-     fun loadBlur(bitmap: Bitmap, filter: Filter): Bitmap =
-        bitmap.applyBlur(renderScript, filter)
+     fun loadBlur(bitmap: Bitmap, adjustFilter: AdjustFilter): Bitmap =
+        bitmap.applyBlur(renderScript, adjustFilter)
 }
 
-fun Bitmap.applyBlur(rs: RenderScript, filter: Filter): Bitmap {
+fun Bitmap.applyBlur(rs: RenderScript, adjustFilter: AdjustFilter): Bitmap {
     val newImage = this.copy(this.config, true)
     val input = Allocation.createFromBitmap(rs, newImage)
     val output: Allocation = Allocation.createTyped(rs, input.type)
     var script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
-    var start = System.currentTimeMillis()
-    Timber.d("applyBlur ${(filter.filterMatrix as FilterMatrix.Blur).validateValue(filter.value)}")
-    script.setRadius(filter.filterMatrix.validateValue(filter.value))
+    script.setRadius((adjustFilter.filterMatrix as FilterType.Blur).validateValue(adjustFilter.value))
     script.setInput(input)
     script.forEach(output)
     output.copyTo(newImage)
     input.destroy()
     output.destroy()
-    Timber.d("applyBlur end time ${System.currentTimeMillis() - start}")
-
     return newImage
 }

@@ -5,13 +5,11 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRowFor
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,11 +24,10 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
 import pl.mrodkiewicz.imageeditor.MainViewModel
 import pl.mrodkiewicz.imageeditor.R
-import pl.mrodkiewicz.imageeditor.data.Filter
+import pl.mrodkiewicz.imageeditor.data.AdjustFilter
 
 @Composable
 fun EditorScreen(mainViewModel: MainViewModel) {
@@ -83,7 +80,11 @@ fun EditorView(mainViewModel: MainViewModel) {
     val pagerState = remember(clock) { EditorPagerState(clock) }
     val filters = mainViewModel.filters.collectAsState()
     val bitmap = mainViewModel.bitmap.observeAsState()
-    Column() {
+    val lutFilters = mainViewModel.lut.collectAsState()
+    val activeFilter = mainViewModel.activeLutIndex.collectAsState()
+    val (visible, setVisibility) = remember { mutableStateOf(false) }
+
+    Column {
         Box(Modifier.weight(1f)) {
             Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
                 ImagePreview(mainViewModel, bitmap.value)
@@ -91,22 +92,23 @@ fun EditorView(mainViewModel: MainViewModel) {
             FilterControl(
                 mainViewModel = mainViewModel,
                 items = filters.value,
+                visible = visible,
                 pagerState = pagerState,
                 modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight()
             )
 
         }
-        Row(Modifier.fillMaxWidth().height(140.dp).background(Color.DarkGray)) {
-            IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.weight(0.1f)) {
-                Icon(Icons.Filled.ArrowBack, tint = Color.White)
-            }
-            LazyRowFor(items = listOf<String>("essa", "eluwina","essa", "eluwina","essa", "eluwina","essa", "eluwina","essa", "eluwina","essa", "eluwina",), modifier = Modifier.weight(0.8f)) { item ->
-                Text(text = item, fontSize = 24.sp, modifier = Modifier.padding(8.dp), color = Color.White)
-            }
-            IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.weight(0.1f)) {
-                Icon(Icons.Filled.ArrowForward, tint = Color.White)
-            }
-        }
+        BottomActionBar(
+            lutFilters = lutFilters.value,
+            activeFilter = activeFilter.value,
+            onTabChange = {
+                if (it==1){
+                    setVisibility(true)
+                }else{
+                    setVisibility(false)
+                }
+            },{index, item ->  mainViewModel.setLUTFilter(index,item) }
+        )
     }
 
 }
@@ -119,11 +121,11 @@ fun ImagePreview(mainViewModel: MainViewModel, bitmap: Bitmap?) {
             Image(
                 it.asImageBitmap(),
                 modifier = Modifier.fillMaxWidth(),
-                contentScale = ContentScale.Inside
+                contentScale = ContentScale.Fit
             )
         } ?: run {
             Text(
-                text = "BITMAP IS NULL",
+                text = "LOADING....",
                 style = MaterialTheme.typography.caption,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -140,7 +142,8 @@ fun ImagePreview(mainViewModel: MainViewModel, bitmap: Bitmap?) {
 fun FilterControl(
     modifier: Modifier = Modifier,
     mainViewModel: MainViewModel,
-    items: List<Filter>,
+    items: List<AdjustFilter>,
+    visible: Boolean = false,
     pagerState: EditorPagerState = run {
         val clock = AmbientAnimationClock.current
         remember(clock) { EditorPagerState(clock) }
@@ -151,12 +154,13 @@ fun FilterControl(
         EditorPager(
             state = pagerState,
             modifier = modifier,
+            visible = visible,
             onValueChange = { index, value ->
-                mainViewModel.updateFilter(index, (value).toInt())
+                mainViewModel.updateAdjustFilter(index, (value).toInt())
             },
         ) {
             EditorPagerItem(
-                filter = items[page],
+                adjustFilter = items[page],
                 modifier = Modifier.padding(4.dp).fillMaxHeight().scalePagerItems()
             )
         }
@@ -164,7 +168,7 @@ fun FilterControl(
 }
 
 @Composable
-private fun EditorPagerItem(filter: Filter, modifier: Modifier = Modifier) {
+private fun EditorPagerItem(adjustFilter: AdjustFilter, modifier: Modifier = Modifier) {
     Column(modifier.padding(horizontal = 0.dp, vertical = 0.dp)) {
         Surface(
             Modifier.align(Alignment.CenterHorizontally).width(120.dp).wrapContentHeight()
@@ -172,14 +176,14 @@ private fun EditorPagerItem(filter: Filter, modifier: Modifier = Modifier) {
         ) {
             Row(Modifier.align(Alignment.CenterHorizontally).padding(8.dp)) {
                 Image(
-                    imageVector = vectorResource(filter.icon),
-                    colorFilter = ColorFilter.tint(filter.customColor),
+                    imageVector = vectorResource(adjustFilter.icon),
+                    colorFilter = ColorFilter.tint(adjustFilter.customColor),
                     modifier = Modifier.width(48.dp).height(48.dp)
                         .absolutePadding(right = 12.dp)
                 )
                 Column {
                     Text(
-                        text = filter.name,
+                        text = adjustFilter.name,
                         style = MaterialTheme.typography.caption,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -187,7 +191,7 @@ private fun EditorPagerItem(filter: Filter, modifier: Modifier = Modifier) {
                             .align(Alignment.CenterHorizontally)
                     )
                     Text(
-                        (filter.value).toString(),
+                        (adjustFilter.value).toString(),
                         Modifier.padding(top = 8.dp)
                             .align(Alignment.CenterHorizontally),
                         Color.Unspecified,

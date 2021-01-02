@@ -7,17 +7,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
-import pl.mrodkiewicz.imageeditor.processor.BlurImageProcessor
-import pl.mrodkiewicz.imageeditor.processor.ColorFilterMatrixImageProcessor
-import pl.mrodkiewicz.imageeditor.processor.ConvolutionMatrixImageProcessor
-import pl.mrodkiewicz.imageeditor.processor.ImageProcessorManager
+import pl.mrodkiewicz.imageeditor.processor.*
 
 @Module
 @InstallIn(ApplicationComponent::class)
 class ImageProcessorsModule {
     @Provides
     fun provideColorFilterMatrixImageProcessor(
-        @ApplicationContext context: Context,
         renderScript: RenderScript
     ): ColorFilterMatrixImageProcessor {
         return ColorFilterMatrixImageProcessor(renderScript)
@@ -25,7 +21,6 @@ class ImageProcessorsModule {
 
     @Provides
     fun provideConvolutionMatrixImageProcessor(
-        @ApplicationContext context: Context,
         renderScript: RenderScript
     ): ConvolutionMatrixImageProcessor {
         return ConvolutionMatrixImageProcessor(renderScript)
@@ -33,10 +28,15 @@ class ImageProcessorsModule {
 
     @Provides
     fun provideBlurImageProcessor(
-        @ApplicationContext context: Context,
         renderScript: RenderScript
     ): BlurImageProcessor {
         return BlurImageProcessor(renderScript)
+    }
+    @Provides
+    fun provideLutImageProcessor(
+        renderScript: RenderScript
+    ): LutImageProcessor {
+        return LutImageProcessor(renderScript)
     }
 
     @Provides
@@ -44,12 +44,14 @@ class ImageProcessorsModule {
         @ApplicationContext context: Context,
         colorFilterMatrixImageProcessor: ColorFilterMatrixImageProcessor,
         convolutionMatrixImageProcessor: ConvolutionMatrixImageProcessor,
-        blurImageProcessor: BlurImageProcessor
+        blurImageProcessor: BlurImageProcessor,
+        lutImageProcessor: LutImageProcessor,
     ): ImageProcessorManager {
         return ImageProcessorManager(
             colorFilterMIP = colorFilterMatrixImageProcessor,
             convolutionMIP = convolutionMatrixImageProcessor,
             blurIP = blurImageProcessor,
+            lutIP = lutImageProcessor,
             context = context
         )
     }

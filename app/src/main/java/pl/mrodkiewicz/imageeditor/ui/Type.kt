@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 import pl.mrodkiewicz.imageeditor.R
 
 
-//work around the problem of not respecting font weights
+//workaround the problem of not respecting font weights
 val latoThin = fontFamily(
     fonts = listOf(
         ResourceFont(

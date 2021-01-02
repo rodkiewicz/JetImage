@@ -1,9 +1,8 @@
 package pl.mrodkiewicz.imageeditor.processor
 
 import android.graphics.Bitmap
-import androidx.compose.ui.graphics.Color
 import androidx.renderscript.*
-import pl.mrodkiewicz.imageeditor.data.Filter
+import pl.mrodkiewicz.imageeditor.data.AdjustFilter
 import pl.mrodkiewicz.imageeditor.helpers.getPercentageFromOne
 import pl.mrodkiewicz.imageeditor.helpers.getPercentageFromZero
 import timber.log.Timber
@@ -11,17 +10,17 @@ import timber.log.Timber
 class ColorFilterMatrixImageProcessor(
     val renderScript: RenderScript,
 ) {
-     fun loadFilter(bitmap: Bitmap, filter: Filter): Bitmap =
-        bitmap.applyFilters(renderScript, filter)
+     fun loadFilter(bitmap: Bitmap, adjustFilter: AdjustFilter): Bitmap =
+        bitmap.applyFilters(renderScript, adjustFilter)
 }
 
-fun Bitmap.applyFilters(rs: RenderScript, filter: Filter): Bitmap {
+fun Bitmap.applyFilters(rs: RenderScript, adjustFilter: AdjustFilter): Bitmap {
     val newImage = this.copy(Bitmap.Config.ARGB_8888, true)
     val input = Allocation.createFromBitmap(rs, newImage)
     val output: Allocation = Allocation.createTyped(rs, input.type)
     var script = ScriptIntrinsicColorMatrix.create(rs, Element.U8_4(rs))
-    var matrix = Matrix3f(filter.filterMatrix.matrix)
-    matrix.serPercentageForMatrix(filter.value)
+    var matrix = Matrix3f(adjustFilter.filterMatrix.matrix)
+    matrix.serPercentageForMatrix(adjustFilter.value)
     Timber.d("image processor setColorMatrix")
     script.setColorMatrix(matrix)
     script.forEach(input, output)

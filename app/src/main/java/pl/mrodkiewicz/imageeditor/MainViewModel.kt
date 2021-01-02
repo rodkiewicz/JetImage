@@ -2,9 +2,7 @@ package pl.mrodkiewicz.imageeditor
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.compose.ui.res.imageResource
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -18,11 +16,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import pl.mrodkiewicz.imageeditor.data.Filter
-import pl.mrodkiewicz.imageeditor.data.default_filters
+import pl.mrodkiewicz.imageeditor.data.AdjustFilter
+import pl.mrodkiewicz.imageeditor.data.LutFilter
+import pl.mrodkiewicz.imageeditor.data.default_adjust_filters
 import pl.mrodkiewicz.imageeditor.processor.ImageProcessorManager
 import timber.log.Timber
-import java.io.InputStream
 
 
 class MainViewModel @ViewModelInject constructor(
@@ -32,19 +30,24 @@ class MainViewModel @ViewModelInject constructor(
     // UI State
     private val _bitmap = MutableLiveData<Bitmap>()
     val bitmap: LiveData<Bitmap> = _bitmap
-    private val _filters = MutableStateFlow(default_filters)
-    val filters: StateFlow<ImmutableList<Filter>> = _filters
+    private val _filters = MutableStateFlow(default_adjust_filters)
+    val filters: StateFlow<ImmutableList<AdjustFilter>> = _filters
+    private val _lut: MutableStateFlow<MutableList<Pair<Bitmap,LutFilter>>?> = MutableStateFlow(null)
+    val lut: StateFlow<List<Pair<Bitmap,LutFilter>>?> = _lut
+    private val _activeLutIndex: MutableStateFlow<Int> = MutableStateFlow(-1)
+    val activeLutIndex: StateFlow<Int> = _activeLutIndex
+
     private var startTime = 0L
 
-    private val _filterPipeline: MutableStateFlow<Pair<ImmutableList<Filter>, Filter>> =
-        MutableStateFlow(Pair(default_filters, default_filters[0]))
+    private val _adjust_filter_pipeline: MutableStateFlow<Pair<ImmutableList<AdjustFilter>, AdjustFilter>> =
+        MutableStateFlow(Pair(default_adjust_filters, default_adjust_filters[0]))
 
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            _filterPipeline.onEach { _filters.value = it.first }.debounce(25L).collect {
+            _adjust_filter_pipeline.onEach { _filters.value = it.first }.debounce(25L).collect {
                 startTime = System.currentTimeMillis()
-                imageProcessorManager.process(it)
+                imageProcessorManager.processAdjustFilter(it)
             }
         }
         viewModelScope.launch(Dispatchers.Default) {
@@ -58,22 +61,46 @@ class MainViewModel @ViewModelInject constructor(
                 }
             }
         }
+        viewModelScope.launch(Dispatchers.Default){
+            imageProcessorManager.lutOutput.collect {
+                _lut.value = it?.toMutableList()
+            }
+        }
+
     }
 
 
-    fun updateFilter(index: Int, value: Int) {
+    fun updateAdjustFilter(index: Int, value: Int) {
         var list = _filters.value.toPersistentList().toMutableList()
         var newValue = list[index].value + value
         if (list[index].minValue <= newValue && list[index].maxValue >= newValue) {
             list[index] = list[index].copy(value = newValue)
-            _filterPipeline.value = Pair(list.toImmutableList(), list[index])
+            _adjust_filter_pipeline.value = Pair(list.toImmutableList(), list[index])
+        }
+    }
+
+    fun setLUTFilter(index: Int = -1, lutFilter: LutFilter) {
+        viewModelScope.launch {
+            if(index==_activeLutIndex.value){
+                imageProcessorManager.processLutFilter(null)
+                _activeLutIndex.value = -1
+            }else{
+                _activeLutIndex.value = -1
+                imageProcessorManager.processLutFilter(lutFilter)
+                _activeLutIndex.value = index
+            }
+
         }
     }
 
     fun setBitmapUri(uri: Uri) {
         viewModelScope.launch {
-                imageProcessorManager.setBitmapUri(uri)
-                _filterPipeline.value = Pair(default_filters, default_filters[0])
+            imageProcessorManager.setBitmapUri(uri)
+            _activeLutIndex.value = -1
+            _adjust_filter_pipeline.value = Pair(
+                default_adjust_filters,
+                default_adjust_filters[0]
+            )
         }
     }
 
@@ -83,7 +110,9 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
-    fun save(onSaved: (uri: Uri)->Unit){
+
+
+    fun save(onSaved: (uri: Uri) -> Unit) {
         viewModelScope.launch {
             onSaved.invoke(imageProcessorManager.save(_filters.value))
             Timber.d("imageProcessorManager save ${_filters.value}")
@@ -95,4 +124,5 @@ class MainViewModel @ViewModelInject constructor(
         imageProcessorManager.cleanup()
     }
 }
+
 
