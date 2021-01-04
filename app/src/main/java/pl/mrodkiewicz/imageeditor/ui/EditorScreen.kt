@@ -1,16 +1,16 @@
 package pl.mrodkiewicz.imageeditor.ui
 
 import android.content.Intent
+import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,8 +29,9 @@ import pl.mrodkiewicz.imageeditor.MainViewModel
 import pl.mrodkiewicz.imageeditor.R
 import pl.mrodkiewicz.imageeditor.data.AdjustFilter
 
+@ExperimentalComposeApi
 @Composable
-fun EditorScreen(mainViewModel: MainViewModel) {
+fun EditorScreen(writePermissionState: PermissionState, mainViewModel: MainViewModel) {
     val context = AmbientContext.current
     Column {
         Surface(
@@ -51,21 +52,33 @@ fun EditorScreen(mainViewModel: MainViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    IconButton(onClick = {
-                        mainViewModel.save { uri ->
-                            startActivity(
-                                context,
-                                Intent(Intent.ACTION_VIEW, uri),
-                                null
+                    NeedsPermission(writePermissionState, {
+                        IconButton(onClick = {
+                            mainViewModel.save { uri ->
+                                startActivity(
+                                    context,
+                                    Intent(Intent.ACTION_VIEW, uri).apply {
+                                        addFlags(FLAG_GRANT_READ_URI_PERMISSION)
+                                    },null
+                                )
+                            }
+                        }) {
+                            Image(
+                                imageVector = vectorResource(R.drawable.ic_baseline_done_24),
+                                colorFilter = ColorFilter.tint(Color(235, 183, 22)),
+                                modifier = Modifier.width(24.dp).height(24.dp)
                             )
                         }
+                    }, { IconButton(onClick = {
+                        writePermissionState.launchPermissionRequest()
                     }) {
                         Image(
                             imageVector = vectorResource(R.drawable.ic_baseline_done_24),
-                            colorFilter = ColorFilter.tint(Color(235, 183, 22)),
+                            colorFilter = ColorFilter.tint(Color(150, 150, 150)),
                             modifier = Modifier.width(24.dp).height(24.dp)
                         )
-                    }
+                    } })
+
                 }
 
             }
@@ -79,7 +92,7 @@ fun EditorView(mainViewModel: MainViewModel) {
     val clock = AmbientAnimationClock.current
     val pagerState = remember(clock) { EditorPagerState(clock) }
     val filters = mainViewModel.filters.collectAsState()
-    val bitmap = mainViewModel.bitmap.observeAsState()
+    val bitmap = mainViewModel.bitmap.collectAsState()
     val lutFilters = mainViewModel.lut.collectAsState()
     val activeFilter = mainViewModel.activeLutIndex.collectAsState()
     val (visible, setVisibility) = remember { mutableStateOf(false) }
@@ -102,12 +115,12 @@ fun EditorView(mainViewModel: MainViewModel) {
             lutFilters = lutFilters.value,
             activeFilter = activeFilter.value,
             onTabChange = {
-                if (it==1){
+                if (it == 1) {
                     setVisibility(true)
-                }else{
+                } else {
                     setVisibility(false)
                 }
-            },{index, item ->  mainViewModel.setLUTFilter(index,item) }
+            }, { index, item -> mainViewModel.setLUTFilter(index, item) }
         )
     }
 

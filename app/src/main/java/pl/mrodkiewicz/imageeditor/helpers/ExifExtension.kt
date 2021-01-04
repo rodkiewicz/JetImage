@@ -2,7 +2,6 @@ package pl.mrodkiewicz.imageeditor.helpers
 
 import android.graphics.Matrix
 import androidx.exifinterface.media.ExifInterface
-import androidx.exifinterface.media.ExifInterface.*
 
 fun decodeExifOrientation(exifOrientation: Int): Matrix {
     val matrix = Matrix()

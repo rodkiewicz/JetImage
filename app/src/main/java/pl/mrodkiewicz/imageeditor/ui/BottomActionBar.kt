@@ -2,13 +2,11 @@ package pl.mrodkiewicz.imageeditor.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.Indication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRowForIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -27,7 +25,7 @@ import pl.mrodkiewicz.imageeditor.data.LutFilter
 
 @Composable
 fun BottomActionBar(
-    lutFilters: List<Pair<Bitmap, LutFilter>>? = null,
+    lutFilters: List<LutFilter>,
     activeFilter: Int = -1,
     onTabChange: (Int) -> Unit,
     onFilterSelected: (Int, LutFilter) -> Unit,
@@ -39,15 +37,15 @@ fun BottomActionBar(
             0 -> {
                 lutFilters?.let {
                     LazyRowForIndexed(items = it) { index, item ->
-                        LutFilterItem(item.second.name, item.first, index == activeFilter) {
-                            onFilterSelected.invoke(
-                                index,
-                                item.second
-                            )
+                        item.thumbnail?.let { it1 ->
+                            LutFilterItem(item.name, it1, index == activeFilter) {
+                                onFilterSelected.invoke(
+                                    index,
+                                    item
+                                )
+                            }
                         }
                     }
-                } ?: run {
-                    Text("loading")
                 }
             }
             else -> Text("essa1")

@@ -1,8 +1,5 @@
 package pl.mrodkiewicz.imageeditor.helpers
 
-
-//if percentage is 0 the filter intensity is 0
-
 //if percentage is 0 the filter intensity is 0
 fun FloatArray.serPercentageForMatrix(percentage: Int): FloatArray {
     var floatArray = this

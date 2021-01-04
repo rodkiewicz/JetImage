@@ -5,8 +5,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import pl.mrodkiewicz.imageeditor.helpers.darkArray
-import pl.mrodkiewicz.imageeditor.helpers.sepiaArray
-import pl.mrodkiewicz.imageeditor.helpers.serPercentageForMatrix
 
 class MatrixExtensionOneHundredPercentageTest {
     lateinit var matrix3f: Matrix3f

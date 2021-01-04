@@ -1,11 +1,8 @@
 package pl.mrodkiewicz.imageeditor.processor
 
 import android.graphics.Bitmap
-import androidx.compose.ui.graphics.Color
 import androidx.renderscript.*
-import pl.mrodkiewicz.imageeditor.data.AdjustFilter
 import pl.mrodkiewicz.imageeditor.data.LutFilter
-import timber.log.Timber
 
 class LutImageProcessor(
     val renderScript: RenderScript,

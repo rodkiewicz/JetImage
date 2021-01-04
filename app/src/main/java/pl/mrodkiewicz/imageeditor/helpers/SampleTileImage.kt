@@ -9,6 +9,7 @@ import ar.com.hjg.pngj.chunks.ChunkLoadBehaviour
 import java.io.File
 import java.util.*
 
+// source code https://github.com/leonbloy/pngj/blob/master/src/test/java/ar/com/hjg/pngj/samples/SampleTileImage.java
 object SampleTileImage {
     fun doTiling(tiles: Array<String?>, dest: String?, nTilesX: Int) {
         val ntiles = tiles.size

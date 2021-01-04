@@ -15,6 +15,7 @@ import pl.mrodkiewicz.imageeditor.R
 import pl.mrodkiewicz.imageeditor.data.AdjustFilter
 import pl.mrodkiewicz.imageeditor.data.FilterType
 import pl.mrodkiewicz.imageeditor.data.LutFilter
+import pl.mrodkiewicz.imageeditor.data.default_lut_filters
 import pl.mrodkiewicz.imageeditor.helpers.*
 import timber.log.Timber
 import java.util.*
@@ -30,6 +31,7 @@ class ImageProcessorManager(
     private lateinit var bitmapUri: Uri
 
     // bitmap resized to device pixel dimensions
+    private var originalBitmap: Bitmap? = null
     private var draftBitmap: Bitmap? = null
     private var width = 0
 
@@ -42,19 +44,18 @@ class ImageProcessorManager(
         Timber.e("ImageProcessorManager got $exception")
     }
 
-    private var job: CompletableJob = Job()
     private var imageProcessorScope = Dispatchers.Default + handler
     private val _outputBitmap = MutableStateFlow<Bitmap?>(null)
     val outputBitmap: StateFlow<Bitmap?> = _outputBitmap
 
-    private val _lutOutput = MutableStateFlow<ImmutableList<Pair<Bitmap,LutFilter>>?>(null)
-    val lutOutput: StateFlow<ImmutableList<Pair<Bitmap,LutFilter>>?> = _lutOutput
-
+    private val _lutOutput = MutableStateFlow<ImmutableList<LutFilter>>(default_lut_filters)
+    val lutOutput: StateFlow<ImmutableList<LutFilter>> = _lutOutput
 
 
     suspend fun setBitmapUri(uri: Uri) {
         withContext(Dispatchers.IO) {
             draftBitmap = null
+            originalBitmap = null
             _outputBitmap.value = null
             bitmapUri = uri
             setBitmap(uri.loadBitmap(context))
@@ -63,9 +64,9 @@ class ImageProcessorManager(
 
 
     private suspend fun setBitmap(bitmap: Bitmap) {
-        draftBitmap = bitmap.copy(bitmap.config, true)
+        originalBitmap = bitmap.copy(bitmap.config, true)
         setWidth(width)
-        getLutThumbnail()
+        getLutThumbnails()
         Timber.d("setBitmap ${bitmap.byteCount}")
     }
 
@@ -107,23 +108,18 @@ class ImageProcessorManager(
 
     suspend fun processLutFilter(lutFilter: LutFilter?) {
         withContext(imageProcessorScope) {
-            draftBitmap?.let { draftBitmap ->
-                lutFilter?.let { lutFilter ->
-                    var bitmap = draftBitmap.copy(draftBitmap.config, true)
-                    bitmap?.let {
-                        bitmap = processBitmap(bitmap, lutFilter)
-                        lutFilter?.let { it1 ->Timber.d("processLutFilter ${lutFilter}")}
-                        _outputBitmap.value = bitmap
-                    }
-                } ?: run{
-                    var bitmap = draftBitmap.copy(draftBitmap.config, true)
-                    _outputBitmap.value = bitmap
-                }
+            lutFilter?.let { lutFilter ->
+                draftBitmap = originalBitmap?.let { processBitmap(it, lutFilter) }
+                _outputBitmap.value = draftBitmap
+            } ?: run {
+                var bitmap = originalBitmap?.copy(originalBitmap?.config, true)
+                _outputBitmap.value = bitmap
             }
         }
     }
 
-    private fun getLutFilters(): List<LutFilter>{
+
+    private fun getLutFilters(): List<LutFilter> {
         var listOfDrawables = listOf(
             R.drawable.lut_bleach,
             R.drawable.lut_blue_crush,
@@ -140,10 +136,10 @@ class ImageProcessorManager(
         return listOfDrawables.toImmutableList()
     }
 
-    private fun getLutThumbnail(){
+    private fun getLutThumbnails() {
         var lutFilters = getLutFilters()
-        var list = mutableListOf<Pair<Bitmap, LutFilter>>()
-        draftBitmap?.let {
+        var list = mutableListOf<LutFilter>()
+        originalBitmap?.let {
             var thumbnailBitmap = Bitmap.createScaledBitmap(
                 it,
                 100,
@@ -151,46 +147,17 @@ class ImageProcessorManager(
                 false
             )
             lutFilters.forEach {
-                list.add(Pair(processBitmap(thumbnailBitmap, it), it))
+                it.thumbnail = processBitmap(thumbnailBitmap, it)
+                list.add(it)
             }
         }
         _lutOutput.value = list.toImmutableList()
     }
 
-    suspend fun save(adjustFilters: ImmutableList<AdjustFilter>): Uri =
+    // TODO: SAVING WITH FULL RESOLUTION USING RENDERSCRIPT
+    suspend fun save(): Uri =
         withContext(Dispatchers.Default) {
-            bitmapUri.loadBitmap(context).let { bmp ->
-                val bitmaps = bmp.divideIntoTiles(4)
-                val outputBitmaps = mutableListOf<Bitmap>()
-                bitmaps.forEach { bitmap ->
-                    var outputBitmap = bitmap.copy(bitmap.config, true)
-                    adjustFilters.forEach {
-                        if (it.value > 0) {
-                            outputBitmap = processBitmap(outputBitmap, it)
-                        }
-                    }
-                    outputBitmap.let { it1 -> outputBitmaps.add(it1) }
-                    bitmap.recycle()
-                }
-                var output = createPictureUri(context, "output", "output")
-                withContext(Dispatchers.IO) {
-                    var startTime = System.currentTimeMillis()
-                    SampleTileImage.doTiling(outputBitmaps.mapIndexed { index, it ->
-                        it.saveImage(
-                            context,
-                            "jetimage",
-                            "jetimage00000${index}"
-                        )
-                    }.toTypedArray(), output.absolutePath, 4)
-                    Timber.d("to trwalo ${(System.currentTimeMillis() - startTime) / 1000}")
-                    addImageToGallery(context, output.absolutePath)
-                }
-                FileProvider.getUriForFile(
-                    context,
-                    "pl.mrodkiewicz.imageeditor.provider",
-                    output
-                )
-            }
+            return@withContext draftBitmap?.saveImage(context)!!
         }
 
     private fun processBitmap(bitmap: Bitmap, filter: AdjustFilter): Bitmap {
@@ -216,11 +183,11 @@ class ImageProcessorManager(
     }
 
     private suspend fun resizeImage() {
-        Timber.d("resizeImage started ${width} ${draftBitmap?.byteCount}")
+        Timber.d("resizeImage started ${width} ${originalBitmap?.byteCount}")
 
         withContext(imageProcessorScope) {
-            draftBitmap =
-                draftBitmap?.let {
+            originalBitmap =
+                originalBitmap?.let {
                     Bitmap.createScaledBitmap(
                         it,
                         width,
@@ -228,8 +195,9 @@ class ImageProcessorManager(
                         false
                     )
                 }
-            Timber.d("resizeImage finished ${draftBitmap?.width} ${draftBitmap?.height}")
-            _outputBitmap.value = draftBitmap
+            Timber.d("resizeImage finished ${originalBitmap?.width} ${originalBitmap?.height}")
+            _outputBitmap.value = originalBitmap
+            draftBitmap = originalBitmap?.copy(originalBitmap?.config, true)
         }
     }
 
@@ -244,10 +212,11 @@ class ImageProcessorManager(
         if (width != 0) {
             this.width = width
         }
-        draftBitmap?.let { draftBitmap ->
-            if ((this.width != 0) && (draftBitmap.width != this.width)) {
-                if (draftBitmap.width <= width || width == 0) {
+        originalBitmap?.let { originalBitmap ->
+            if ((this.width != 0) && (originalBitmap.width != this.width)) {
+                if (originalBitmap.width <= width || width == 0) {
                     Timber.d("resizeImage: originalBitmap.width <= width || width == 0")
+                    draftBitmap = originalBitmap.copy(originalBitmap.config, true)
                 } else {
                     withContext(Dispatchers.Default) {
                         resizeImage()

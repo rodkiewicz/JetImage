@@ -2,17 +2,13 @@ package pl.mrodkiewicz.imageeditor.ui
 
 import androidx.compose.animation.animate
 import androidx.compose.animation.core.AnimationClockObservable
-import androidx.compose.animation.core.repeatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.rememberScrollableController
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawOpacity
-import androidx.compose.ui.gesture.doubleTapGestureFilter
-import androidx.compose.ui.gesture.longPressGestureFilter
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
@@ -161,7 +157,7 @@ class EditorPagerScope(
     fun Modifier.scalePagerItems(
     ): Modifier = Modifier.drawWithContent {
         drawContent()
-    }.drawOpacity(currentPage.distanceToOpacity(page))
+    }.alpha(currentPage.distanceToOpacity(page))
 
 }
 

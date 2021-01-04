@@ -1,6 +1,5 @@
 package pl.mrodkiewicz.imageeditor.helpers
 
-import android.R.attr.bitmap
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -25,7 +24,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.sqrt
 
 
@@ -33,14 +31,14 @@ fun Uri.loadBitmap(context: Context): Bitmap {
     var inputStream: InputStream? = context.contentResolver.openInputStream(this)
     val exif = inputStream?.let { it1 -> ExifInterface(it1) }
     var orientation = exif?.getAttributeInt(
-        androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
-        androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL
+        ExifInterface.TAG_ORIENTATION,
+        ExifInterface.ORIENTATION_NORMAL
     ) ?: 0
     val matrix = decodeExifOrientation(orientation)
     inputStream?.close()
     inputStream = context.contentResolver.openInputStream(this)
     val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-    return android.graphics.Bitmap.createBitmap(
+    return Bitmap.createBitmap(
         bitmap, 0, 0, bitmap.width,
         bitmap.height, matrix, true
     )
@@ -62,7 +60,7 @@ fun MutableList<MutableList<Bitmap>>.combineTilesIntoBitmap(): Bitmap {
     var parts = sqrt(this.size.toDouble()).toInt()
     var width = this[0][0].width
     var height = this[0][0].height
-    var outputBitmap = Bitmap.createBitmap(width * parts,height * parts,Bitmap.Config.ARGB_8888)
+    var outputBitmap = Bitmap.createBitmap(width * parts, height * parts, Bitmap.Config.ARGB_8888)
     var canvas = Canvas(outputBitmap)
     for (x in 0 until parts) {
         for (y in 0 until parts) {
@@ -74,14 +72,24 @@ fun MutableList<MutableList<Bitmap>>.combineTilesIntoBitmap(): Bitmap {
 }
 
 fun List<String>.saveTiles(string: String){
-    Timber.d("saveTiles ${this.toString()}")
+    Timber.d("saveTiles ${this}")
     var tileSize = sqrt(this.size.toDouble()).toInt()
     var reader = PngReader(File(this[0])) // path to file
     var tileImageInfo  = reader.imgInfo
-    var outputImageInfo = ImageInfo(this.size * tileSize, this.size * tileSize, tileImageInfo.bitDepth,tileImageInfo.alpha,tileImageInfo.greyscale,tileImageInfo.indexed)
+    var outputImageInfo = ImageInfo(
+        this.size * tileSize,
+        this.size * tileSize,
+        tileImageInfo.bitDepth,
+        tileImageInfo.alpha,
+        tileImageInfo.greyscale,
+        tileImageInfo.indexed
+    )
     var readers = mutableListOf<PngReader>()
-    var writer = PngWriter(File(string), outputImageInfo,true)
-    writer.copyChunksFrom(reader.chunksList, ChunkCopyBehaviour.COPY_PALETTE or ChunkCopyBehaviour.COPY_TRANSPARENCY)
+    var writer = PngWriter(File(string), outputImageInfo, true)
+    writer.copyChunksFrom(
+        reader.chunksList,
+        ChunkCopyBehaviour.COPY_PALETTE or ChunkCopyBehaviour.COPY_TRANSPARENCY
+    )
     reader.close()
     var line2 = ImageLineInt(outputImageInfo)
     var row2 = 0
@@ -92,7 +100,7 @@ fun List<String>.saveTiles(string: String){
         Timber.d("line2 size ${line2.scanline.size} ${nTilesXcur} ")
         for (tx in 0 until nTilesXcur)
         { // open serveral readers
-            readers.add(tx,PngReader(File(this[tx + ty * tileSize])))
+            readers.add(tx, PngReader(File(this[tx + ty * tileSize])))
             readers[tx].setChunkLoadBehaviour(ChunkLoadBehaviour.LOAD_CHUNK_NEVER)
             if (!readers[tx].imgInfo.equals(tileImageInfo))
                 throw RuntimeException("different tile ? " + readers[tx].imgInfo)
@@ -103,8 +111,10 @@ fun List<String>.saveTiles(string: String){
             for (tx in 0 until nTilesXcur)
             {
                 val line1 = readers[tx].readRow(row1) as ImageLineInt // read line
-                System.arraycopy(line1.scanline, 0, line2.scanline, line1.scanline.size * tx,
-                    line1.scanline.size)
+                System.arraycopy(
+                    line1.scanline, 0, line2.scanline, line1.scanline.size * tx,
+                    line1.scanline.size
+                )
             }
             writer.writeRow(line2, row2) // write to full image
             row1++
@@ -140,31 +150,29 @@ fun createPictureUri(
 
 fun Bitmap.saveImage(
     context: Context,
-    folder: String,
-    filename: String,
-): String {
-    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-    val imagePath: File = File(context.filesDir, "images")
-    imagePath.mkdir()
-    var file = File.createTempFile(
-        "PNG_${filename}_${timeStamp}_", /* prefix */
-        ".PNG", /* suffix */
-        imagePath/* directory */
-    )
+): Uri {
+    val root = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString()
+    val myDir = File("$root/saved_images")
+    myDir.mkdirs()
 
-    var uri = FileProvider.getUriForFile(
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+    val fname = "jetimage_$timeStamp.png"
+
+    val file = File(myDir, fname)
+    if (file.exists()) file.delete()
+    try {
+        val out = FileOutputStream(file)
+        this.compress(Bitmap.CompressFormat.PNG, 100, out)
+        out.flush()
+        out.close()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return FileProvider.getUriForFile(
         context,
-        "pl.mrodkiewicz.imageeditor.provider",
+        context.applicationContext.packageName.toString() + ".provider",
         file
     )
-
-    try {
-        val bmpOut = FileOutputStream(file)
-        this.compress(Bitmap.CompressFormat.PNG, 100, bmpOut)
-        bmpOut.close()
-    } catch (e: NullPointerException) {
-    }
-    return file.absolutePath
 }
 
 fun getUriForCameraPhoto(context: Context): Uri? {
@@ -183,7 +191,6 @@ fun getUriForCameraPhoto(context: Context): Uri? {
 fun addImageToGallery(context: Context, filePath: String) {
     val values = ContentValues()
 
-    values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
     values.put(
         MediaStore.Images.Media.MIME_TYPE,
         MimeTypeMap.getSingleton()
