@@ -38,8 +38,7 @@ fun EditorScreen(writePermissionState: PermissionState, mainViewModel: MainViewM
             Modifier.fillMaxWidth().height(56.dp).background(MaterialTheme.colors.primary)
         ) {
             Row(
-                Modifier.background(MaterialTheme.colors.secondary)
-                    .align(Alignment.CenterHorizontally).padding(start = 8.dp),
+                Modifier.background(MaterialTheme.colors.secondary).align(Alignment.CenterHorizontally).padding(start = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
