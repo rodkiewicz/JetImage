@@ -16,7 +16,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import pl.mrodkiewicz.imageeditor.helpers.getUriForCameraPhoto
 import pl.mrodkiewicz.imageeditor.ui.EditorScreen
 import pl.mrodkiewicz.imageeditor.ui.ImageEditorTheme
-import pl.mrodkiewicz.imageeditor.ui.checkSelfPermissionState
+import pl.mrodkiewicz.imageeditor.ui.editorscreen.checkSelfPermissionState
 import pl.mrodkiewicz.imageeditor.ui.splashscreen.SplashScreen
 import pl.mrodkiewicz.imageeditor.ui.splashscreen.SplashScreenStateUI
 import timber.log.Timber
@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
     @ExperimentalComposeApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             ImageEditorTheme {
                 MainScreen()

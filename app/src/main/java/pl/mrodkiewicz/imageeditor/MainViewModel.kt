@@ -93,7 +93,9 @@ class MainViewModel @ViewModelInject constructor(
 
     fun setBitmapUri(uri: Uri) {
         viewModelScope.launch {
+            imageProcessorManager.cleanup()
             imageProcessorManager.setBitmapUri(uri)
+
             _activeLutIndex.value = -1
             _adjust_filter_pipeline.value = Pair(
                 default_adjust_filters,

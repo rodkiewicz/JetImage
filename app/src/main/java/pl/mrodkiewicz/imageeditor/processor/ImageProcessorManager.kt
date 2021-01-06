@@ -183,8 +183,6 @@ class ImageProcessorManager(
     }
 
     private suspend fun resizeImage() {
-        Timber.d("resizeImage started ${width} ${originalBitmap?.byteCount}")
-
         withContext(imageProcessorScope) {
             originalBitmap =
                 originalBitmap?.let {
@@ -195,17 +193,16 @@ class ImageProcessorManager(
                         false
                     )
                 }
-            Timber.d("resizeImage finished ${originalBitmap?.width} ${originalBitmap?.height}")
             _outputBitmap.value = originalBitmap
             draftBitmap = originalBitmap?.copy(originalBitmap?.config, true)
         }
     }
 
     fun cleanup() {
-        draftBitmap?.recycle()
-        cachedBitmap?.recycle()
+        cachedBitmap = null
         draftBitmap = null
         _outputBitmap.value = null
+        System.gc()
     }
 
     suspend fun setWidth(width: Int) {
@@ -214,9 +211,9 @@ class ImageProcessorManager(
         }
         originalBitmap?.let { originalBitmap ->
             if ((this.width != 0) && (originalBitmap.width != this.width)) {
-                if (originalBitmap.width <= width || width == 0) {
-                    Timber.d("resizeImage: originalBitmap.width <= width || width == 0")
+                if ((originalBitmap.width <= width || width == 0) && _outputBitmap.value == null) {
                     draftBitmap = originalBitmap.copy(originalBitmap.config, true)
+                    _outputBitmap.value = draftBitmap
                 } else {
                     withContext(Dispatchers.Default) {
                         resizeImage()

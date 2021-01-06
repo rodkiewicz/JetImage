@@ -33,7 +33,7 @@ import pl.mrodkiewicz.imageeditor.ui.Pager
 import pl.mrodkiewicz.imageeditor.ui.PagerState
 import pl.mrodkiewicz.imageeditor.ui.actionBarTextStyle
 
-private enum class AnimationState { COLLAPSED, EXTENDED }
+enum class AnimationState { COLLAPSED, EXTENDED }
 
 private val actionBarHeight = DpPropKey("ActionBarHeight =")
 private val actionBarTextSize = FloatPropKey("TextSize")
@@ -108,7 +108,7 @@ fun SplashScreen(
                     .padding(start = 8.dp),
             ) {
                 Text(
-                    text = "JetEditor",
+                    text = "JetPhoto",
                     fontSize = animationState[actionBarTextSize].sp,
                     style = actionBarTextStyle,
                     modifier = Modifier.align(Alignment.CenterStart)

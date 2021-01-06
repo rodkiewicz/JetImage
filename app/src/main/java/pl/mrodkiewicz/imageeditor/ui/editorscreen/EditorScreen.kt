@@ -28,6 +28,8 @@ import androidx.core.content.ContextCompat.startActivity
 import pl.mrodkiewicz.imageeditor.MainViewModel
 import pl.mrodkiewicz.imageeditor.R
 import pl.mrodkiewicz.imageeditor.data.AdjustFilter
+import pl.mrodkiewicz.imageeditor.ui.editorscreen.NeedsPermission
+import pl.mrodkiewicz.imageeditor.ui.editorscreen.PermissionState
 
 @ExperimentalComposeApi
 @Composable
@@ -43,7 +45,7 @@ fun EditorScreen(writePermissionState: PermissionState, mainViewModel: MainViewM
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "JetEditor",
+                    text = "JetPhoto",
                     style = actionBarTextStyle,
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )

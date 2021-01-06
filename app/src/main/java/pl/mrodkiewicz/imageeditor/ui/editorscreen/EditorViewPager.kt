@@ -1,19 +1,25 @@
 package pl.mrodkiewicz.imageeditor.ui
 
-import androidx.compose.animation.animate
 import androidx.compose.animation.core.AnimationClockObservable
-import androidx.compose.foundation.gestures.rememberScrollableController
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.animation.core.FloatPropKey
+import androidx.compose.animation.core.transitionDefinition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.transition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.gesture.Direction
+import androidx.compose.ui.gesture.ScrollCallback
+import androidx.compose.ui.gesture.scrollGestureFilter
 import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.unit.Density
+import pl.mrodkiewicz.imageeditor.ui.splashscreen.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -71,6 +77,10 @@ private data class EditorPageData(val page: Int) : ParentDataModifier {
 private val Measurable.page: Int
     get() = (parentData as? EditorPageData)?.page ?: error("no PageData for measurable $this")
 
+enum class AnimationEditorPagerState { HIDE, SCROLL, SHOW }
+
+private val opacity = FloatPropKey("opacity")
+
 @Composable
 fun EditorPager(
     modifier: Modifier = Modifier,
@@ -81,8 +91,58 @@ fun EditorPager(
     pageContent: @Composable() (EditorPagerScope.() -> Unit),
 ) {
     var pageSize by remember { mutableStateOf(0) }
-    val opacity = animate(if (visible) 1f else 0f)
-
+    val (scroll, onScrollStatusChange) = remember { mutableStateOf(false) }
+    val animation = remember {
+        transitionDefinition<AnimationEditorPagerState> {
+            state(AnimationEditorPagerState.HIDE) {
+                this[opacity] = 0f
+            }
+            state(AnimationEditorPagerState.SHOW) {
+                this[opacity] = 0.5f
+            }
+            state(AnimationEditorPagerState.SCROLL) {
+                this[opacity] = 0.9f
+            }
+            transition(AnimationEditorPagerState.HIDE to AnimationEditorPagerState.SHOW) {
+                opacity using tween(
+                    durationMillis = 500
+                )
+            }
+            transition(AnimationEditorPagerState.HIDE to AnimationEditorPagerState.SCROLL) {
+                opacity using tween(
+                    durationMillis = 500
+                )
+            }
+            transition(AnimationEditorPagerState.SHOW to AnimationEditorPagerState.HIDE) {
+                opacity using tween(
+                    durationMillis = 500
+                )
+            }
+            transition(AnimationEditorPagerState.SHOW to AnimationEditorPagerState.SCROLL) {
+                opacity using tween(
+                    durationMillis = 500
+                )
+            }
+            transition(AnimationEditorPagerState.SCROLL to AnimationEditorPagerState.HIDE) {
+                opacity using tween(
+                    durationMillis = 500
+                )
+            }
+            transition(AnimationEditorPagerState.SCROLL to AnimationEditorPagerState.SHOW) {
+                opacity using tween(
+                    durationMillis = 500
+                )
+            }
+        }
+    }
+    val animationState = transition(
+        definition = animation,
+        toState = when {
+            scroll -> AnimationEditorPagerState.SCROLL
+            visible -> AnimationEditorPagerState.SHOW
+            else -> AnimationEditorPagerState.HIDE
+        },
+    )
     Layout(
         content = {
             val minPage = (state.currentPage - offscreenLimit).coerceAtLeast(state.minPage)
@@ -100,26 +160,48 @@ fun EditorPager(
         },
 
         modifier = modifier
-            .alpha(opacity)
-            .scrollable(Orientation.Vertical, rememberScrollableController {
-                if (visible) {
-                   0f
-                } else {
-                    state.currentOffset += it
-                    it
+            .alpha(animationState[opacity])
+            .scrollGestureFilter(scrollCallback = object : ScrollCallback {
+                override fun onStart(downPosition: Offset) {
+                    onScrollStatusChange.invoke(true)
+                    super.onStart(downPosition)
                 }
-            }).scrollable(
-                orientation = Orientation.Horizontal, rememberScrollableController {
-                    if (visible) {
-                        0f
-                    } else {
-                        onValueChange.invoke(state.currentPage, it)
-                        it
+
+                override fun onScroll(scrollDistance: Float): Float {
+                    super.onScroll(scrollDistance)
+                    onValueChange.invoke(state.currentPage, scrollDistance)
+                    return scrollDistance
+                }
+
+                override fun onStop(velocity: Float) {
+                    onScrollStatusChange.invoke(false)
+                    super.onStop(velocity)
+                }
+            }, canDrag = { it == Direction.LEFT || it == Direction.RIGHT }, orientation = Orientation.Horizontal, startDragImmediately = false)
+            .scrollGestureFilter(
+                scrollCallback = object : ScrollCallback {
+                    override fun onStart(downPosition: Offset) {
+                        onScrollStatusChange.invoke(true)
+                        super.onStart(downPosition)
                     }
-                }
+
+                    override fun onScroll(scrollDistance: Float): Float {
+                        super.onScroll(scrollDistance)
+                        state.currentOffset += scrollDistance
+                        return scrollDistance
+                    }
+
+                    override fun onStop(velocity: Float) {
+                        onScrollStatusChange.invoke(false)
+                        super.onStop(velocity)
+                    }
+                },
+                canDrag = { it == Direction.UP || it == Direction.DOWN },
+                orientation = Orientation.Vertical,
+                startDragImmediately = false
             ),
 
-    ) { measurables, constraints ->
+        ) { measurables, constraints ->
         layout(constraints.maxWidth, constraints.maxHeight) {
             val currentPage = state.currentPage
             val offset = state.currentOffset
