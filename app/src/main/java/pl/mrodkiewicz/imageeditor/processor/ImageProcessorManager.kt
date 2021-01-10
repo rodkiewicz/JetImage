@@ -27,7 +27,7 @@ class ImageProcessorManager(
     val blurIP: BlurImageProcessor,
     val lutIP: LutImageProcessor,
     @ApplicationContext val context: Context
-) {
+): ImageProcessor {
     private lateinit var bitmapUri: Uri
 
     // bitmap resized to device pixel dimensions
@@ -46,13 +46,13 @@ class ImageProcessorManager(
 
     private var imageProcessorScope = Dispatchers.Default + handler
     private val _outputBitmap = MutableStateFlow<Bitmap?>(null)
-    val outputBitmap: StateFlow<Bitmap?> = _outputBitmap
+    override val outputBitmap: StateFlow<Bitmap?> = _outputBitmap
 
     private val _lutOutput = MutableStateFlow<ImmutableList<LutFilter>>(default_lut_filters)
-    val lutOutput: StateFlow<ImmutableList<LutFilter>> = _lutOutput
+    override val lutOutput: StateFlow<ImmutableList<LutFilter>> = _lutOutput
 
 
-    suspend fun setBitmapUri(uri: Uri) {
+    override suspend fun setBitmapUri(uri: Uri) {
         withContext(Dispatchers.IO) {
             draftBitmap = null
             originalBitmap = null
@@ -67,10 +67,9 @@ class ImageProcessorManager(
         originalBitmap = bitmap.copy(bitmap.config, true)
         setWidth(width)
         getLutThumbnails()
-        Timber.d("setBitmap ${bitmap.byteCount}")
     }
 
-    suspend fun processAdjustFilter(filter: Pair<ImmutableList<AdjustFilter>, AdjustFilter>) =
+    override suspend fun processAdjustFilter(filter: Pair<ImmutableList<AdjustFilter>, AdjustFilter>) =
         withContext(imageProcessorScope) {
             draftBitmap?.let { draftBitmap ->
                 if (filter.second.id.equals(cachedFilterID) && cachedBitmap != null) {
@@ -106,7 +105,7 @@ class ImageProcessorManager(
             }
         }
 
-    suspend fun processLutFilter(lutFilter: LutFilter?) {
+    override suspend fun processLutFilter(lutFilter: LutFilter?) {
         withContext(imageProcessorScope) {
             lutFilter?.let { lutFilter ->
                 draftBitmap = originalBitmap?.let { processBitmap(it, lutFilter) }
@@ -155,7 +154,7 @@ class ImageProcessorManager(
     }
 
     // TODO: SAVING WITH FULL RESOLUTION USING RENDERSCRIPT
-    suspend fun save(): Uri =
+    override suspend fun save(): Uri =
         withContext(Dispatchers.Default) {
             return@withContext draftBitmap?.saveImage(context)!!
         }
@@ -175,7 +174,7 @@ class ImageProcessorManager(
         return lutIP.loadFilter(bitmap, filter)
     }
 
-    fun cache(bitmap: Bitmap, filterId: UUID, filterIndex: Int) {
+    override fun cache(bitmap: Bitmap, filterId: UUID, filterIndex: Int) {
         cachedBitmap = bitmap.copy(bitmap.config, true)
         cachedFilterID = filterId
         cacheIndex = filterIndex
@@ -198,14 +197,14 @@ class ImageProcessorManager(
         }
     }
 
-    fun cleanup() {
+    override fun cleanup() {
         cachedBitmap = null
         draftBitmap = null
         _outputBitmap.value = null
         System.gc()
     }
 
-    suspend fun setWidth(width: Int) {
+    override suspend fun setWidth(width: Int) {
         if (width != 0) {
             this.width = width
         }

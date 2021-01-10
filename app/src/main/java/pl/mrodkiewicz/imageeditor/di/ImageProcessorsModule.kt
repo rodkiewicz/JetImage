@@ -8,10 +8,17 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import pl.mrodkiewicz.imageeditor.processor.*
+import javax.inject.Qualifier
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class MainImageProcessor
 
 @Module
 @InstallIn(ApplicationComponent::class)
 class ImageProcessorsModule {
+
+
     @Provides
     fun provideColorFilterMatrixImageProcessor(
         renderScript: RenderScript
@@ -39,6 +46,7 @@ class ImageProcessorsModule {
         return LutImageProcessor(renderScript)
     }
 
+    @MainImageProcessor
     @Provides
     fun provideImageProcessorManager(
         @ApplicationContext context: Context,
@@ -46,7 +54,7 @@ class ImageProcessorsModule {
         convolutionMatrixImageProcessor: ConvolutionMatrixImageProcessor,
         blurImageProcessor: BlurImageProcessor,
         lutImageProcessor: LutImageProcessor,
-    ): ImageProcessorManager {
+    ): ImageProcessor {
         return ImageProcessorManager(
             colorFilterMIP = colorFilterMatrixImageProcessor,
             convolutionMIP = convolutionMatrixImageProcessor,
