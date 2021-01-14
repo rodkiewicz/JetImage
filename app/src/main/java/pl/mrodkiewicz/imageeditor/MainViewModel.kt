@@ -18,7 +18,6 @@ import pl.mrodkiewicz.imageeditor.data.LutFilter
 import pl.mrodkiewicz.imageeditor.data.default_adjust_filters
 import pl.mrodkiewicz.imageeditor.data.default_lut_filters
 import pl.mrodkiewicz.imageeditor.processor.ImageProcessorManager
-import timber.log.Timber
 
 
 class MainViewModel @ViewModelInject constructor(
@@ -37,16 +36,13 @@ class MainViewModel @ViewModelInject constructor(
     private val _activeLutIndex: MutableStateFlow<Int> = MutableStateFlow(-1)
     val activeLutIndex: StateFlow<Int> = _activeLutIndex
 
-
-    private var startTime = 0L
-    private val _adjust_filter_pipeline: MutableStateFlow<Pair<ImmutableList<AdjustFilter>, AdjustFilter>> =
+    private val adjustFilterPipeline: MutableStateFlow<Pair<ImmutableList<AdjustFilter>, AdjustFilter>> =
         MutableStateFlow(Pair(default_adjust_filters, default_adjust_filters[0]))
 
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            _adjust_filter_pipeline.onEach { _filters.value = it.first }.debounce(25L).collect {
-                startTime = System.currentTimeMillis()
+            adjustFilterPipeline.onEach { _filters.value = it.first }.debounce(25L).collect {
                 imageProcessorManager.processAdjustFilter(it)
             }
         }
@@ -68,11 +64,11 @@ class MainViewModel @ViewModelInject constructor(
 
 
     fun updateAdjustFilter(index: Int, value: Int) {
-        var list = _filters.value.toPersistentList().toMutableList()
-        var newValue = list[index].value + value
+        val list = _filters.value.toPersistentList().toMutableList()
+        val newValue = list[index].value + value
         if (list[index].minValue <= newValue && list[index].maxValue >= newValue) {
             list[index] = list[index].copy(value = newValue)
-            _adjust_filter_pipeline.value = Pair(list.toImmutableList(), list[index])
+            adjustFilterPipeline.value = Pair(list.toImmutableList(), list[index])
         }
     }
 
@@ -96,8 +92,10 @@ class MainViewModel @ViewModelInject constructor(
             imageProcessorManager.cleanup()
             imageProcessorManager.setBitmapUri(uri)
 
+            // reset lut filter
             _activeLutIndex.value = -1
-            _adjust_filter_pipeline.value = Pair(
+            // reset adjust filter pipeline
+            adjustFilterPipeline.value = Pair(
                 default_adjust_filters,
                 default_adjust_filters[0]
             )
@@ -120,8 +118,8 @@ class MainViewModel @ViewModelInject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         imageProcessorManager.cleanup()
+        super.onCleared()
     }
 }
 

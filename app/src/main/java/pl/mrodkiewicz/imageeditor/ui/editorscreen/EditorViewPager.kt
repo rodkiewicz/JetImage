@@ -1,4 +1,4 @@
-package pl.mrodkiewicz.imageeditor.ui
+package pl.mrodkiewicz.imageeditor.ui.editorscreen
 
 import androidx.compose.animation.core.AnimationClockObservable
 import androidx.compose.animation.core.FloatPropKey
@@ -71,7 +71,7 @@ class EditorPagerState(
 
 @Immutable
 private data class EditorPageData(val page: Int) : ParentDataModifier {
-    override fun Density.modifyParentData(parentData: Any?): Any? = this@EditorPageData
+    override fun Density.modifyParentData(parentData: Any?): Any = this@EditorPageData
 }
 
 private val Measurable.page: Int
@@ -83,12 +83,12 @@ private val opacity = FloatPropKey("opacity")
 
 @Composable
 fun EditorPager(
-    modifier: Modifier = Modifier,
-    state: EditorPagerState,
-    offscreenLimit: Int = 10,
-    onValueChange: (Int, Float) -> Unit,
-    visible: Boolean = false,
-    pageContent: @Composable() (EditorPagerScope.() -> Unit),
+        modifier: Modifier = Modifier,
+        state: EditorPagerState,
+        offscreenLimit: Int = 10,
+        onValueChange: (Int, Float) -> Unit,
+        visible: Boolean = false,
+        pageContent: @Composable (EditorPagerScope.() -> Unit),
 ) {
     var pageSize by remember { mutableStateOf(0) }
     val (scroll, onScrollStatusChange) = remember { mutableStateOf(false) }
@@ -230,12 +230,13 @@ fun EditorPager(
 }
 
 class EditorPagerScope(
-    private val state: EditorPagerState,
-    val page: Int
+        private val state: EditorPagerState,
+        val page: Int
 ) {
-    val currentPage: Int
+    private val currentPage: Int
         get() = state.currentPage
 
+    @Suppress("unused")
     fun Modifier.scalePagerItems(
     ): Modifier = Modifier.drawWithContent {
         drawContent()

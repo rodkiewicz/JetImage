@@ -21,7 +21,7 @@ fun Bitmap.applyLut(rs: RenderScript, lutFilter: LutFilter): Bitmap {
         setY(lutFilter.z)
         setZ(lutFilter.y)
     }.create()
-    var lut = Allocation.createTyped(rs,type)
+    val lut = Allocation.createTyped(rs,type)
     lut.copyFromUnchecked(lutFilter.lutFilter)
     script.setLUT(lut)
     script.forEach(input, output)

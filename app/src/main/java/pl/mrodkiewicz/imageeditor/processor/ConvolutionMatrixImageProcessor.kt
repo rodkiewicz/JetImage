@@ -30,7 +30,7 @@ fun Bitmap.applyConvolution(rs: RenderScript, adjustFilter: AdjustFilter): Bitma
                 )
             )
             script.setInput(input)
-            repeat((adjustFilter.value / 10).toInt()) {
+            repeat((adjustFilter.value / 10)) {
                 (script as ScriptIntrinsicConvolve3x3?)?.forEach(input)
             }
             script.forEach(input)

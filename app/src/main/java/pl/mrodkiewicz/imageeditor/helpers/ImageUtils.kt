@@ -1,49 +1,38 @@
 package pl.mrodkiewicz.imageeditor.helpers
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
-import ar.com.hjg.pngj.ImageInfo
-import ar.com.hjg.pngj.ImageLineInt
-import ar.com.hjg.pngj.PngReader
-import ar.com.hjg.pngj.PngWriter
-import ar.com.hjg.pngj.chunks.ChunkCopyBehaviour
-import ar.com.hjg.pngj.chunks.ChunkLoadBehaviour
 import pl.mrodkiewicz.imageeditor.BuildConfig
 import pl.mrodkiewicz.imageeditor.data.LutFilter
-import timber.log.Timber
 import java.io.File
 import java.io.File.separator
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.math.sqrt
 
 
 fun Uri.loadBitmap(context: Context): Bitmap {
     var inputStream: InputStream? = context.contentResolver.openInputStream(this)
     val exif = inputStream?.let { it1 -> ExifInterface(it1) }
-    var orientation = exif?.getAttributeInt(
-        ExifInterface.TAG_ORIENTATION,
-        ExifInterface.ORIENTATION_NORMAL
+    val orientation = exif?.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
     ) ?: 0
     val matrix = decodeExifOrientation(orientation)
     inputStream?.close()
     inputStream = context.contentResolver.openInputStream(this)
     val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
     return Bitmap.createBitmap(
-        bitmap, 0, 0, bitmap.width,
-        bitmap.height, matrix, true
+            bitmap, 0, 0, bitmap.width,
+            bitmap.height, matrix, true
     )
 }
 
@@ -53,7 +42,7 @@ fun Bitmap.saveImageAndAddToGallery(context: Context): Uri? {
         values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/" + "jetphoto")
         values.put(MediaStore.Images.Media.IS_PENDING, true)
         val uri: Uri? = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        if (uri != null) {
+        uri?.let {
             saveImageToStream(this, context.contentResolver.openOutputStream(uri))
             values.put(MediaStore.Images.Media.IS_PENDING, false)
             context.contentResolver.update(uri, values, null, null)
@@ -61,18 +50,15 @@ fun Bitmap.saveImageAndAddToGallery(context: Context): Uri? {
         uri
     } else {
         val directory = File(Environment.getExternalStorageDirectory().toString() + separator + "jetphoto")
-
         if (!directory.exists()) {
             directory.mkdirs()
         }
         val fileName = System.currentTimeMillis().toString() + ".png"
         val file = File(directory, fileName)
         saveImageToStream(this, FileOutputStream(file))
-        if (file.absolutePath != null) {
-            val values = contentValues()
-            values.put(MediaStore.Images.Media.DATA, file.absolutePath)
-            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        }
+        val values = contentValues()
+        values.put(MediaStore.Images.Media.DATA, file.absolutePath)
+        context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
         FileProvider.getUriForFile(
                 context,
                 context.applicationContext.packageName.toString() + ".provider",
@@ -81,16 +67,17 @@ fun Bitmap.saveImageAndAddToGallery(context: Context): Uri? {
     }
 }
 
-private fun contentValues() : ContentValues {
+@SuppressLint("InlinedApi")
+private fun contentValues(): ContentValues {
     val values = ContentValues()
     values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-    values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000);
-    values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
+    values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+    values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
     return values
 }
 
 private fun saveImageToStream(bitmap: Bitmap, outputStream: OutputStream?) {
-    outputStream?.let{
+    outputStream?.let {
         try {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
             outputStream.close()
@@ -102,22 +89,22 @@ private fun saveImageToStream(bitmap: Bitmap, outputStream: OutputStream?) {
 
 
 fun getUriForCameraPhoto(context: Context): Uri? {
-    val imagePath: File = File(context.filesDir, "images")
+    val imagePath = File(context.filesDir, "images")
     if (!imagePath.exists()) {
         imagePath.mkdirs()
     }
     val filename = "image.jpg"
     val file = File(imagePath, filename)
     return FileProvider.getUriForFile(
-        context,
-        BuildConfig.APPLICATION_ID + ".provider", file
+            context,
+            BuildConfig.APPLICATION_ID + ".provider", file
     )
 }
 
 fun Bitmap.convertToLutFilter(name: String): LutFilter {
-    var lut = LutFilter(name)
-    var x = width / height
-    var lutList = mutableListOf<Int>()
+    val lut = LutFilter(name)
+    val x = width / height
+    val lutList = mutableListOf<Int>()
     lut.x = x
     lut.y = lut.x
     lut.z = lut.x

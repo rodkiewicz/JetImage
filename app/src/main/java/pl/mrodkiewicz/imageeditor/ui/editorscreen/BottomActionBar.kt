@@ -1,4 +1,4 @@
-package pl.mrodkiewicz.imageeditor.ui
+package pl.mrodkiewicz.imageeditor.ui.editorscreen
 
 import android.graphics.Bitmap
 import androidx.compose.animation.DpPropKey
@@ -71,15 +71,13 @@ fun BottomActionBar(
         Box(modifier = Modifier.height(animationState[height])) {
             when (currentTab) {
                 0 -> {
-                    lutFilters.let {
-                        LazyRowForIndexed(items = it) { index, item ->
-                            item.thumbnail?.let { it1 ->
-                                LutFilterItem(item.name, it1, index == activeFilter) {
-                                    onFilterSelected.invoke(
-                                        index,
-                                        item
-                                    )
-                                }
+                    LazyRowForIndexed(items = lutFilters) { index, item ->
+                        item.thumbnail?.let { it1 ->
+                            LutFilterItem(item.name, it1, index == activeFilter) {
+                                onFilterSelected.invoke(
+                                    index,
+                                    item
+                                )
                             }
                         }
                     }
@@ -104,7 +102,7 @@ fun BottomActionBar(
 
 @Composable
 fun LutFilterItem(name: String, image: Bitmap, isActive: Boolean, onClick: () -> Unit) {
-    var backgroundColor = if (isActive) Color.Black else Color(17, 17, 17)
+    val backgroundColor = if (isActive) Color.Black else Color(17, 17, 17)
     Column(
         modifier = Modifier.clickable(onClick = { onClick.invoke() }, indication = null)
             .background(backgroundColor)

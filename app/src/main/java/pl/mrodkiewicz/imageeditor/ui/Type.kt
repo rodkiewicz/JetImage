@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package pl.mrodkiewicz.imageeditor.ui
 
 import androidx.compose.material.Typography

@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package pl.mrodkiewicz.imageeditor.ui.editorscreen
 
 import android.annotation.SuppressLint
@@ -21,10 +23,10 @@ import kotlinx.coroutines.flow.filterNotNull
 
 
 class PermissionState(
-    val permission: String,
-    val hasPermission: Flow<Boolean>,
-    val shouldShowRationale: Flow<Boolean>,
-    private val launcher: ActivityResultLauncher<String>
+        private val permission: String,
+        val hasPermission: Flow<Boolean>,
+        val shouldShowRationale: Flow<Boolean>,
+        private val launcher: ActivityResultLauncher<String>
 ) {
     fun launchPermissionRequest() = launcher.launch(permission)
 }
@@ -76,11 +78,7 @@ private class PermissionResultCall(
     }
 
     private fun checkShowRationale(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            activity.shouldShowRequestPermissionRationale(permission)
-        } else {
-            false
-        }
+        return activity.shouldShowRequestPermissionRationale(permission)
     }
 
     private fun onPermissionResult(result: Boolean) {
@@ -119,9 +117,9 @@ fun checkSelfPermissionState(
 @ExperimentalCoroutinesApi
 @Composable
 fun NeedsPermission(
-    writePermission: PermissionState,
-    hasPermissionContent: @Composable() (() -> Unit),
-    noPermissionContent: @Composable() (() -> Unit),
+        writePermission: PermissionState,
+        hasPermissionContent: @Composable (() -> Unit),
+        noPermissionContent: @Composable (() -> Unit),
 ) {
 
     val hasLocationPermission = writePermission.hasPermission.collectAsState(false).value
@@ -130,24 +128,6 @@ fun NeedsPermission(
             hasPermissionContent.invoke()
         } else {
             noPermissionContent.invoke()
-//            fineLocation.shouldShowRationale.collectAsState().value?.let { showPrompt ->
-//                if (showPrompt) {
-//                    Text("We need location permission because this demo is about location permissions ✔️")
-//                    Button(onClick = { fineLocation.launchPermissionRequest() }) {
-//                        Text("Give permissions")
-//                    }
-//                } else {
-//                    Text("Need permission, don't need to show rationale")
-//                    Text("But, don't automatically prompt from compose (if you want that " +
-//                            "–move it out of compose to e.g. the Activity")
-//                    Text("If you try to prompt from composition (instead of onClick) you " +
-//                            "may create an infinite prompt loop")
-//                    Button(onClick = { fineLocation.launchPermissionRequest() }) {
-//                        Text("OK")
-//                    }
-//                    Text("Hint: Try pressing deny")
-//                }
-//            }
         }
     }
 }

@@ -1,4 +1,4 @@
-package pl.mrodkiewicz.imageeditor.ui
+package pl.mrodkiewicz.imageeditor.ui.splashscreen
 
 
 import androidx.compose.animation.AnimatedFloatModel
@@ -57,6 +57,7 @@ class PagerState(
 
     var selectionState by mutableStateOf(SelectionState.Selected)
 
+    @Suppress("unused")
     inline fun <R> selectPage(block: PagerState.() -> R): R = try {
         selectionState = SelectionState.Undecided
         block()
@@ -74,6 +75,7 @@ class PagerState(
             }
         }
     }
+    @Suppress("unused")
     fun animateToLastPage(){
         if ( currentPage == minPage) return
         _currentPageOffset.animateTo(1f) { reason, _ ->
@@ -131,10 +133,10 @@ private val Measurable.page: Int
 
 @Composable
 fun Pager(
-    modifier: Modifier = Modifier,
-    state: PagerState,
-    offscreenLimit: Int = 2,
-    pageContent: @Composable PagerScope.() -> Unit
+        modifier: Modifier = Modifier,
+        state: PagerState,
+        offscreenLimit: Int = 2,
+        pageContent: @Composable PagerScope.() -> Unit
 ) {
     var pageSize by remember { mutableStateOf(0) }
     Layout(
@@ -205,13 +207,15 @@ fun Pager(
 /**
  * Scope for [Pager] content.
  */
+@Suppress("unused")
 class PagerScope(
-    private val state: PagerState,
-    val page: Int
+        private val state: PagerState,
+        val page: Int
 ) {
     /**
      * Returns the current selected page
      */
+
     val currentPage: Int
         get() = state.currentPage
 
