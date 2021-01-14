@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
@@ -20,8 +21,10 @@ import pl.mrodkiewicz.imageeditor.BuildConfig
 import pl.mrodkiewicz.imageeditor.data.LutFilter
 import timber.log.Timber
 import java.io.File
+import java.io.File.separator
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.sqrt
@@ -44,136 +47,59 @@ fun Uri.loadBitmap(context: Context): Bitmap {
     )
 }
 
-fun Bitmap.divideIntoTiles(parts: Int): MutableList<Bitmap> {
-    var bitmapList = mutableListOf<Bitmap>()
-    var w = width / parts
-    var h = height / parts
-    for (y in 0 until parts) {
-        for (x in 0 until parts) {
-            bitmapList.add(Bitmap.createBitmap(this, x * w, y * h, w, h))
+fun Bitmap.saveImageAndAddToGallery(context: Context): Uri? {
+    return if (Build.VERSION.SDK_INT >= 29) {
+        val values = contentValues()
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/" + "jetphoto")
+        values.put(MediaStore.Images.Media.IS_PENDING, true)
+        val uri: Uri? = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        if (uri != null) {
+            saveImageToStream(this, context.contentResolver.openOutputStream(uri))
+            values.put(MediaStore.Images.Media.IS_PENDING, false)
+            context.contentResolver.update(uri, values, null, null)
+        }
+        uri
+    } else {
+        val directory = File(Environment.getExternalStorageDirectory().toString() + separator + "jetphoto")
+
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val fileName = System.currentTimeMillis().toString() + ".png"
+        val file = File(directory, fileName)
+        saveImageToStream(this, FileOutputStream(file))
+        if (file.absolutePath != null) {
+            val values = contentValues()
+            values.put(MediaStore.Images.Media.DATA, file.absolutePath)
+            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        }
+        FileProvider.getUriForFile(
+                context,
+                context.applicationContext.packageName.toString() + ".provider",
+                file
+        )
+    }
+}
+
+private fun contentValues() : ContentValues {
+    val values = ContentValues()
+    values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+    values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000);
+    values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
+    return values
+}
+
+private fun saveImageToStream(bitmap: Bitmap, outputStream: OutputStream?) {
+    outputStream?.let{
+        try {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
-
-    return bitmapList
-}
-fun MutableList<MutableList<Bitmap>>.combineTilesIntoBitmap(): Bitmap {
-    var parts = sqrt(this.size.toDouble()).toInt()
-    var width = this[0][0].width
-    var height = this[0][0].height
-    var outputBitmap = Bitmap.createBitmap(width * parts, height * parts, Bitmap.Config.ARGB_8888)
-    var canvas = Canvas(outputBitmap)
-    for (x in 0 until parts) {
-        for (y in 0 until parts) {
-            canvas.drawBitmap(this[x][y], (x * width).toFloat(), (y * height).toFloat(), null)
-        }
-    }
-    return outputBitmap
-
 }
 
-fun List<String>.saveTiles(string: String){
-    Timber.d("saveTiles ${this}")
-    var tileSize = sqrt(this.size.toDouble()).toInt()
-    var reader = PngReader(File(this[0])) // path to file
-    var tileImageInfo  = reader.imgInfo
-    var outputImageInfo = ImageInfo(
-        this.size * tileSize,
-        this.size * tileSize,
-        tileImageInfo.bitDepth,
-        tileImageInfo.alpha,
-        tileImageInfo.greyscale,
-        tileImageInfo.indexed
-    )
-    var readers = mutableListOf<PngReader>()
-    var writer = PngWriter(File(string), outputImageInfo, true)
-    writer.copyChunksFrom(
-        reader.chunksList,
-        ChunkCopyBehaviour.COPY_PALETTE or ChunkCopyBehaviour.COPY_TRANSPARENCY
-    )
-    reader.close()
-    var line2 = ImageLineInt(outputImageInfo)
-    var row2 = 0
-    for (ty in 0 until tileSize)
-    {
-        val nTilesXcur = if (ty < tileSize - 1) tileSize else tileSize - (tileSize - 1) * tileSize
-        Arrays.fill(line2.scanline, 0)
-        Timber.d("line2 size ${line2.scanline.size} ${nTilesXcur} ")
-        for (tx in 0 until nTilesXcur)
-        { // open serveral readers
-            readers.add(tx, PngReader(File(this[tx + ty * tileSize])))
-            readers[tx].setChunkLoadBehaviour(ChunkLoadBehaviour.LOAD_CHUNK_NEVER)
-            if (!readers[tx].imgInfo.equals(tileImageInfo))
-                throw RuntimeException("different tile ? " + readers[tx].imgInfo)
-        }
-        var row1 = 0
-        while (row1 < tileImageInfo.rows)
-        {
-            for (tx in 0 until nTilesXcur)
-            {
-                val line1 = readers[tx].readRow(row1) as ImageLineInt // read line
-                System.arraycopy(
-                    line1.scanline, 0, line2.scanline, line1.scanline.size * tx,
-                    line1.scanline.size
-                )
-            }
-            writer.writeRow(line2, row2) // write to full image
-            row1++
-            row2++
-        }
-        for (tx in 0 until nTilesXcur)
-            readers[tx].end() // close readers
-    }
-    writer.end()
-
-}
-
-fun createPictureUri(
-    context: Context,
-    folder: String,
-    name: String,
-): File {
-    var currentPhotoPath = ""
-    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-    val storageDir: File =
-        File(context.filesDir, "images")
-    storageDir.mkdir()
-    val file = File.createTempFile(
-        "JPEG_${name}_${timeStamp}", /* prefix */
-        ".jpg", /* suffix */
-        storageDir/* directory */
-    ).apply {
-        // Save a file: path for use with ACTION_VIEW intents
-        currentPhotoPath = absolutePath
-    }
-    return file
-}
-
-fun Bitmap.saveImage(
-    context: Context,
-): Uri {
-    val root = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString()
-    val myDir = File("$root/saved_images")
-    myDir.mkdirs()
-
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-    val fname = "jetimage_$timeStamp.png"
-
-    val file = File(myDir, fname)
-    if (file.exists()) file.delete()
-    try {
-        val out = FileOutputStream(file)
-        this.compress(Bitmap.CompressFormat.PNG, 100, out)
-        out.flush()
-        out.close()
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-    return FileProvider.getUriForFile(
-        context,
-        context.applicationContext.packageName.toString() + ".provider",
-        file
-    )
-}
 
 fun getUriForCameraPhoto(context: Context): Uri? {
     val imagePath: File = File(context.filesDir, "images")
@@ -186,19 +112,6 @@ fun getUriForCameraPhoto(context: Context): Uri? {
         context,
         BuildConfig.APPLICATION_ID + ".provider", file
     )
-}
-
-fun addImageToGallery(context: Context, filePath: String) {
-    val values = ContentValues()
-
-    values.put(
-        MediaStore.Images.Media.MIME_TYPE,
-        MimeTypeMap.getSingleton()
-            .getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(filePath))
-    )
-    values.put(MediaStore.MediaColumns.DATA, filePath)
-
-    context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 }
 
 fun Bitmap.convertToLutFilter(name: String): LutFilter {

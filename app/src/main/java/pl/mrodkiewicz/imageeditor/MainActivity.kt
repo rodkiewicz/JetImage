@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
                 MainScreen()
             }
         }
+
     }
 
     @ExperimentalComposeApi

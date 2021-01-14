@@ -157,7 +157,7 @@ class ImageProcessorManager(
     // TODO: SAVING WITH FULL RESOLUTION USING RENDERSCRIPT
     suspend fun save(): Uri =
         withContext(Dispatchers.Default) {
-            return@withContext draftBitmap?.saveImage(context)!!
+            return@withContext draftBitmap?.saveImageAndAddToGallery(context)!!
         }
 
     private fun processBitmap(bitmap: Bitmap, filter: AdjustFilter): Bitmap {
