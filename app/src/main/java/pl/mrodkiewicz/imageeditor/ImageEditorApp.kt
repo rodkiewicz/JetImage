@@ -6,7 +6,7 @@ import timber.log.Timber
 import timber.log.Timber.DebugTree
 
 @HiltAndroidApp
-class ImageEditorApp : Application(){
+class ImageEditorApp : Application() {
     override fun onCreate() {
         super.onCreate()
         if (BuildConfig.DEBUG) {

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "957603054728",
+    "project_id": "jetimage",
+    "storage_bucket": "jetimage.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:957603054728:android:b162f6657101871be58b3d",
+        "android_client_info": {
+          "package_name": "pl.mrodkiewicz.imageeditor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "957603054728-4iltqkap1lbb6ht4p6ssko7ik6lgqj4i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDPuKaV8p2SsrITeNjh8zDjl-99vRZN-s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "957603054728-4iltqkap1lbb6ht4p6ssko7ik6lgqj4i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
