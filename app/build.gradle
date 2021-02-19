@@ -4,7 +4,6 @@ plugins {
     id 'kotlin-android-extensions'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
-    id 'com.google.gms.google-services'
     id 'com.google.firebase.crashlytics'
     id 'com.google.firebase.firebase-perf'
 }
@@ -17,8 +16,8 @@ android {
         applicationId "pl.mrodkiewicz.imageeditor"
         minSdkVersion 24
         targetSdkVersion 30
-        versionCode 5
-        versionName "0.5"
+        versionCode 6
+        versionName "0.6"
 
         renderscriptTargetApi 24
         renderscriptSupportModeEnabled true
@@ -29,6 +28,7 @@ android {
     buildTypes {
         debug {
             testCoverageEnabled true
+            ext.enableCrashlytics = false
         }
         release {
             minifyEnabled true
@@ -56,9 +56,10 @@ android {
     buildFeatures {
         compose true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion compose_version
-        kotlinCompilerVersion '1.4.20'
+        kotlinCompilerVersion '1.4.21'
     }
 }
 
@@ -90,7 +91,7 @@ dependencies {
     implementation "androidx.compose.foundation:foundation:$compose_version"
     implementation "androidx.compose.animation:animation:$compose_version"
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
-    implementation "androidx.navigation:navigation-compose:1.0.0-alpha03"
+    implementation "androidx.navigation:navigation-compose:1.0.0-alpha04"
 
     //dagger
     implementation "com.google.dagger:dagger:2.28.3"

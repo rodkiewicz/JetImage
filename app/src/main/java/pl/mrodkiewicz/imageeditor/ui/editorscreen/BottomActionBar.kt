@@ -1,6 +1,10 @@
-package pl.mrodkiewicz.imageeditor.ui
+package pl.mrodkiewicz.imageeditor.ui.editorscreen
 
 import android.graphics.Bitmap
+import androidx.compose.animation.DpPropKey
+import androidx.compose.animation.core.transitionDefinition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.transition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,8 +24,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import pl.mrodkiewicz.imageeditor.data.LutFilter
 
+private val height = DpPropKey("height")
+
+enum class TabsState { FILTERS, ADJUST }
 
 @Composable
 fun BottomActionBar(
@@ -30,13 +38,40 @@ fun BottomActionBar(
     onTabChange: (Int) -> Unit,
     onFilterSelected: (Int, LutFilter) -> Unit,
 ) {
-    var tabs = listOf<String>("FILTERS", "ADJUST")
     val (currentTab, setCurrentTab) = remember { mutableStateOf(0) }
+    val animation = remember {
+        transitionDefinition<TabsState> {
+            state(TabsState.FILTERS) {
+                this[height] = 100.dp // todo this shouldn't be fixed value
+            }
+            state(TabsState.ADJUST) {
+                this[height] = 45.dp
+            }
+            transition(TabsState.FILTERS to TabsState.FILTERS) {
+                height using tween(
+                    durationMillis = 500
+                )
+            }
+            transition(TabsState.FILTERS to TabsState.FILTERS) {
+                height using tween(
+                    durationMillis = 500
+                )
+            }
+
+        }
+    }
+    val animationState = transition(
+        definition = animation,
+        toState = when (currentTab) {
+            0 -> TabsState.FILTERS
+            else -> TabsState.ADJUST
+        },
+    )
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Bottom) {
-        when (currentTab) {
-            0 -> {
-                lutFilters?.let {
-                    LazyRowForIndexed(items = it) { index, item ->
+        Box(modifier = Modifier.height(animationState[height])) {
+            when (currentTab) {
+                0 -> {
+                    LazyRowForIndexed(items = lutFilters) { index, item ->
                         item.thumbnail?.let { it1 ->
                             LutFilterItem(item.name, it1, index == activeFilter) {
                                 onFilterSelected.invoke(
@@ -46,22 +81,31 @@ fun BottomActionBar(
                             }
                         }
                     }
+
+                }
+                else -> Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Spacer(modifier = Modifier.weight(0.5f))
+                    Text("slide left / hard to change a value, \n move up / down to select option", color = Color.White, fontSize = 15.sp)
+                    Spacer(modifier = Modifier.weight(0.5f))
+
                 }
             }
-            else -> Text("essa1")
         }
-        BottomTabs(tabs = tabs, currentTab) {
-            setCurrentTab(it)
-            onTabChange.invoke(it)
-        }
+
+    }
+    BottomTabs(tabs = TabsState.values(), currentTab) {
+        setCurrentTab(it)
+        onTabChange.invoke(it)
     }
 }
 
+
 @Composable
 fun LutFilterItem(name: String, image: Bitmap, isActive: Boolean, onClick: () -> Unit) {
-    var backgroundColor = if (isActive) Color.Black else Color(17, 17, 17 )
+    val backgroundColor = if (isActive) Color.Black else Color(17, 17, 17)
     Column(
-        modifier = Modifier.clickable(onClick = { onClick.invoke() }, indication = null).background(backgroundColor)
+        modifier = Modifier.clickable(onClick = { onClick.invoke() }, indication = null)
+            .background(backgroundColor)
             .padding(8.dp, 8.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -93,7 +137,7 @@ fun LutFilterItem(name: String, image: Bitmap, isActive: Boolean, onClick: () ->
 }
 
 @Composable
-fun BottomTabs(tabs: List<String>, currentTab: Int = 0, onTabChange: (Int) -> Unit) {
+fun BottomTabs(tabs: Array<TabsState>, currentTab: Int = 0, onTabChange: (Int) -> Unit) {
     val weight = 1f / tabs.size
     Row(
         horizontalArrangement = Arrangement.Center,
@@ -107,14 +151,14 @@ fun BottomTabs(tabs: List<String>, currentTab: Int = 0, onTabChange: (Int) -> Un
             ) {
                 if (currentTab == index) {
                     Text(
-                        item,
+                        item.name,
                         color = Color.White,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                     )
                 } else {
                     Text(
-                        item,
+                        item.name,
                         color = Color.DarkGray,
                         textAlign = TextAlign.Center,
                         modifier = Modifier

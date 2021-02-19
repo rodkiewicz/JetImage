@@ -17,7 +17,7 @@ fun Bitmap.applyBlur(rs: RenderScript, adjustFilter: AdjustFilter): Bitmap {
     val newImage = this.copy(this.config, true)
     val input = Allocation.createFromBitmap(rs, newImage)
     val output: Allocation = Allocation.createTyped(rs, input.type)
-    var script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
+    val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
     script.setRadius((adjustFilter.filterMatrix as FilterType.Blur).validateValue(adjustFilter.value))
     script.setInput(input)
     script.forEach(output)

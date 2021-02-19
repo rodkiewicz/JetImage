@@ -14,7 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import pl.mrodkiewicz.imageeditor.helpers.getUriForCameraPhoto
-import pl.mrodkiewicz.imageeditor.ui.EditorScreen
+import pl.mrodkiewicz.imageeditor.ui.editorscreen.EditorScreen
 import pl.mrodkiewicz.imageeditor.ui.ImageEditorTheme
 import pl.mrodkiewicz.imageeditor.ui.editorscreen.checkSelfPermissionState
 import pl.mrodkiewicz.imageeditor.ui.splashscreen.SplashScreen
@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
                 MainScreen()
             }
         }
+
     }
 
     @ExperimentalComposeApi

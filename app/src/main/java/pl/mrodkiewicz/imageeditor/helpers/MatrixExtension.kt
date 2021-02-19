@@ -2,7 +2,7 @@ package pl.mrodkiewicz.imageeditor.helpers
 
 //if percentage is 0 the filter intensity is 0
 fun FloatArray.serPercentageForMatrix(percentage: Int): FloatArray {
-    var floatArray = this
+    val floatArray = this
     floatArray[0] = floatArray[0].getPercentageFromOne(percentage)
     floatArray[1] = floatArray[1].getPercentageFromZero(percentage)
     floatArray[2] = floatArray[2].getPercentageFromZero(percentage)

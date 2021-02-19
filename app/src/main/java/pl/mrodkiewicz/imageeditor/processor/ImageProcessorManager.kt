@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -12,10 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import pl.mrodkiewicz.imageeditor.R
-import pl.mrodkiewicz.imageeditor.data.AdjustFilter
-import pl.mrodkiewicz.imageeditor.data.FilterType
-import pl.mrodkiewicz.imageeditor.data.LutFilter
-import pl.mrodkiewicz.imageeditor.data.default_lut_filters
+import pl.mrodkiewicz.imageeditor.data.*
 import pl.mrodkiewicz.imageeditor.helpers.*
 import timber.log.Timber
 import java.util.*
@@ -30,15 +26,11 @@ class ImageProcessorManager(
 ): ImageProcessor {
     private lateinit var bitmapUri: Uri
 
-    // bitmap resized to device pixel dimensions
     private var originalBitmap: Bitmap? = null
     private var draftBitmap: Bitmap? = null
     private var width = 0
 
-    private var cachedBitmap: Bitmap? = null
-    private var cachedFilterID: UUID? = null
-    private var cacheIndex = -1
-
+    var cache = Cache()
 
     private val handler = CoroutineExceptionHandler { _, exception ->
         Timber.e("ImageProcessorManager got $exception")
@@ -48,8 +40,9 @@ class ImageProcessorManager(
     private val _outputBitmap = MutableStateFlow<Bitmap?>(null)
     override val outputBitmap: StateFlow<Bitmap?> = _outputBitmap
 
-    private val _lutOutput = MutableStateFlow<ImmutableList<LutFilter>>(default_lut_filters)
-    override val lutOutput: StateFlow<ImmutableList<LutFilter>> = _lutOutput
+
+    private val _lutOutput = MutableStateFlow(default_lut_filters)
+    val lutOutput: StateFlow<ImmutableList<LutFilter>> = _lutOutput
 
 
     override suspend fun setBitmapUri(uri: Uri) {
@@ -72,26 +65,26 @@ class ImageProcessorManager(
     override suspend fun processAdjustFilter(filter: Pair<ImmutableList<AdjustFilter>, AdjustFilter>) =
         withContext(imageProcessorScope) {
             draftBitmap?.let { draftBitmap ->
-                if (filter.second.id.equals(cachedFilterID) && cachedBitmap != null) {
-                    cachedBitmap?.let {
+                if (filter.second.id == cache.filterID && cache.bitmap != null) {
+                    cache.bitmap?.let { it ->
                         var bitmap = it.copy(it.config, true)
                         bitmap?.let {
                             bitmap = processBitmap(bitmap, filter.second)
                         }
-                        filter.first.subList(cacheIndex + 1, filter.first.lastIndex + 1).forEach {
+                        filter.first.subList(cache.index + 1, filter.first.lastIndex + 1).forEach {
                             if (it.value > 0) {
                                 bitmap = processBitmap(bitmap, it)
                             }
                         }
                         _outputBitmap.value = bitmap
-                        cache(it, filter.second.id, cacheIndex)
+                        cache(it, filter.second.id, cache.index)
                     }
                     return@withContext
                 } else {
                     var bitmap = draftBitmap.copy(draftBitmap.config, true)
                     bitmap?.let {
                         filter.first.forEachIndexed { index, it ->
-                            if (it.id.equals(filter.second.id)) {
+                            if (it.id == filter.second.id) {
                                 cache(bitmap, filter.second.id, index)
                             }
                             if (it.value > 0) {
@@ -111,7 +104,7 @@ class ImageProcessorManager(
                 draftBitmap = originalBitmap?.let { processBitmap(it, lutFilter) }
                 _outputBitmap.value = draftBitmap
             } ?: run {
-                var bitmap = originalBitmap?.copy(originalBitmap?.config, true)
+                val bitmap = originalBitmap?.copy(originalBitmap?.config, true)
                 _outputBitmap.value = bitmap
             }
         }
@@ -119,7 +112,7 @@ class ImageProcessorManager(
 
 
     private fun getLutFilters(): List<LutFilter> {
-        var listOfDrawables = listOf(
+        val listOfDrawables = listOf(
             R.drawable.lut_bleach,
             R.drawable.lut_blue_crush,
             R.drawable.lut_bw_contrast,
@@ -136,10 +129,10 @@ class ImageProcessorManager(
     }
 
     private fun getLutThumbnails() {
-        var lutFilters = getLutFilters()
-        var list = mutableListOf<LutFilter>()
+        val lutFilters = getLutFilters()
+        val list = mutableListOf<LutFilter>()
         originalBitmap?.let {
-            var thumbnailBitmap = Bitmap.createScaledBitmap(
+            val thumbnailBitmap = Bitmap.createScaledBitmap(
                 it,
                 100,
                 it.height * 100 / it.width,
@@ -156,7 +149,7 @@ class ImageProcessorManager(
     // TODO: SAVING WITH FULL RESOLUTION USING RENDERSCRIPT
     override suspend fun save(): Uri =
         withContext(Dispatchers.Default) {
-            return@withContext draftBitmap?.saveImage(context)!!
+            return@withContext draftBitmap?.saveImageAndAddToGallery(context)!!
         }
 
     private fun processBitmap(bitmap: Bitmap, filter: AdjustFilter): Bitmap {
@@ -174,11 +167,15 @@ class ImageProcessorManager(
         return lutIP.loadFilter(bitmap, filter)
     }
 
-    override fun cache(bitmap: Bitmap, filterId: UUID, filterIndex: Int) {
-        cachedBitmap = bitmap.copy(bitmap.config, true)
-        cachedFilterID = filterId
-        cacheIndex = filterIndex
-        Timber.d("cache ${bitmap.hashCode()} ${filterId}")
+
+    private fun cache(bitmap: Bitmap, filterId: UUID, filterIndex: Int) {
+        cache = Cache(
+                bitmap.copy(bitmap.config, true),
+                filterId,
+                filterIndex
+        )
+
+
     }
 
     private suspend fun resizeImage() {
@@ -197,8 +194,8 @@ class ImageProcessorManager(
         }
     }
 
-    override fun cleanup() {
-        cachedBitmap = null
+
+    fun cleanup() {
         draftBitmap = null
         _outputBitmap.value = null
         System.gc()

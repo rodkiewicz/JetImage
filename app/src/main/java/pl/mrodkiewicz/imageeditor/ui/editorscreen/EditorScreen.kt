@@ -1,4 +1,4 @@
-package pl.mrodkiewicz.imageeditor.ui
+package pl.mrodkiewicz.imageeditor.ui.editorscreen
 
 import android.content.Intent
 import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -28,8 +28,7 @@ import androidx.core.content.ContextCompat.startActivity
 import pl.mrodkiewicz.imageeditor.MainViewModel
 import pl.mrodkiewicz.imageeditor.R
 import pl.mrodkiewicz.imageeditor.data.AdjustFilter
-import pl.mrodkiewicz.imageeditor.ui.editorscreen.NeedsPermission
-import pl.mrodkiewicz.imageeditor.ui.editorscreen.PermissionState
+import pl.mrodkiewicz.imageeditor.ui.actionBarTextStyle
 
 @ExperimentalComposeApi
 @Composable

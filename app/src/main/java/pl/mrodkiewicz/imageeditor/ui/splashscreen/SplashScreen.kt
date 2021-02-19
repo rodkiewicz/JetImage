@@ -29,8 +29,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.navigate
 import pl.mrodkiewicz.imageeditor.R
 import pl.mrodkiewicz.imageeditor.helpers.getUriForCameraPhoto
-import pl.mrodkiewicz.imageeditor.ui.Pager
-import pl.mrodkiewicz.imageeditor.ui.PagerState
 import pl.mrodkiewicz.imageeditor.ui.actionBarTextStyle
 
 enum class AnimationState { COLLAPSED, EXTENDED }
@@ -47,11 +45,7 @@ fun SplashScreen(
     getContent: ActivityResultLauncher<String>,
     splashScreenStateUI: MutableState<SplashScreenStateUI>
 ) {
-    val clock = AmbientAnimationClock.current
-    var pagerState = remember(clock) { PagerState(clock) }
-
-
-    var actionBarExtendedHeight =
+    val actionBarExtendedHeight =
         with(AmbientDensity.current) { (AmbientConfiguration.current.screenHeightDp / 2).dp }
 
     val animation = remember {
@@ -139,7 +133,7 @@ fun SplashScreen(
 }
 
 @Composable
-fun helloPage(nextPageButtonClick: () -> Unit) {
+fun HelloPage(nextPageButtonClick: () -> Unit) {
     Column(
         modifier = Modifier.background(Color(15, 15, 15)).fillMaxSize().padding(top = 12.dp),
         verticalArrangement = Arrangement.Center,
@@ -157,15 +151,15 @@ fun helloPage(nextPageButtonClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            helloPageItem(
+            HelloPageItem(
                 text = "lorem ipsum lorem ipsum lorem ipsum ",
                 icon = vectorResource(id = R.drawable.ic_add_photo_alternate_24)
             )
-            helloPageItem(
+            HelloPageItem(
                 text = "lorem ipsum lorem ipsum lorem ipsum ",
                 icon = vectorResource(id = R.drawable.ic_add_photo_alternate_24)
             )
-            helloPageItem(
+            HelloPageItem(
                 text = "lorem ipsum lorem ipsum lorem ipsum ",
                 icon = vectorResource(id = R.drawable.ic_add_photo_alternate_24)
             )
@@ -188,7 +182,7 @@ fun helloPage(nextPageButtonClick: () -> Unit) {
 }
 
 @Composable
-fun helloPageItem(text: String, icon: ImageVector){
+fun HelloPageItem(text: String, icon: ImageVector){
     Row(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
@@ -211,7 +205,7 @@ fun helloPageItem(text: String, icon: ImageVector){
 }
 
 @Composable
-fun permissionPage(cameraPermissionButtonClick: () -> Unit, galleryPermissionButtonClick: () -> Unit) {
+fun PermissionPage(cameraPermissionButtonClick: () -> Unit, galleryPermissionButtonClick: () -> Unit) {
     Column(
         modifier = Modifier.background(Color(15, 15, 15)).fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -233,7 +227,7 @@ fun permissionPage(cameraPermissionButtonClick: () -> Unit, galleryPermissionBut
         ) {
             Column(verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = {cameraPermissionButtonClick.invoke()}, modifier = Modifier.width(100.dp), colors = ButtonConstants.defaultButtonColors(backgroundColor = Color.DarkGray)) {
+                Button(onClick = {cameraPermissionButtonClick.invoke()}, modifier = Modifier.width(100.dp), colors = ButtonDefaults.buttonColors(backgroundColor = Color.DarkGray)) {
                     Icon(
                         vectorResource(id = R.drawable.ic_add_a_photo_24),
                         modifier = Modifier.preferredSize(36.dp)
@@ -267,7 +261,7 @@ fun permissionPage(cameraPermissionButtonClick: () -> Unit, galleryPermissionBut
 }
 
 @Composable
-fun selectImagePage(takePhoto: () -> Unit, getContent: () -> Unit) {
+fun SelectImagePage(takePhoto: () -> Unit, getContent: () -> Unit) {
     Column(
         modifier = Modifier.background(Color(15, 15, 15)).fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -315,15 +309,15 @@ fun SplashViewPager(
     },
 ) {
     pagerState.maxPage = (2 - 1).coerceAtLeast(0)
-    var context = AmbientContext.current
+    val context = AmbientContext.current
     Pager(
         state = pagerState,
         modifier = modifier
     ) {
         when (page) {
-            0 -> helloPage { pagerState.animateToNextPage() }
+            0 -> HelloPage { pagerState.animateToNextPage() }
 //            1 -> permissionPage( { {}} , { pagerState.animateToNextPage() })
-            1 -> selectImagePage ({ takePhoto.launch( getUriForCameraPhoto(context)) }, { getContent.launch("image/*")})
+            1 -> SelectImagePage ({ takePhoto.launch( getUriForCameraPhoto(context)) }, { getContent.launch("image/*")})
         }
 
     }
