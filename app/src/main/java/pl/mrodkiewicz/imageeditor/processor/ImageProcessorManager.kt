@@ -42,7 +42,7 @@ class ImageProcessorManager(
 
 
     private val _lutOutput = MutableStateFlow(default_lut_filters)
-    val lutOutput: StateFlow<ImmutableList<LutFilter>> = _lutOutput
+    override val lutOutput: StateFlow<ImmutableList<LutFilter>> = _lutOutput
 
 
     override suspend fun setBitmapUri(uri: Uri) {
@@ -168,7 +168,7 @@ class ImageProcessorManager(
     }
 
 
-    private fun cache(bitmap: Bitmap, filterId: UUID, filterIndex: Int) {
+    override fun cache(bitmap: Bitmap, filterId: UUID, filterIndex: Int) {
         cache = Cache(
                 bitmap.copy(bitmap.config, true),
                 filterId,
@@ -195,7 +195,7 @@ class ImageProcessorManager(
     }
 
 
-    fun cleanup() {
+    override fun cleanup() {
         draftBitmap = null
         _outputBitmap.value = null
         System.gc()
