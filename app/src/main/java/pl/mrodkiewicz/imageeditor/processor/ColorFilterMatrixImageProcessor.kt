@@ -15,7 +15,7 @@ class ColorFilterMatrixImageProcessor(
 }
 
 fun Bitmap.applyFilters(rs: RenderScript, adjustFilter: AdjustFilter): Bitmap {
-    val newImage = this.copy(Bitmap.Config.ARGB_8888, true)
+    val newImage = this.copy(this.config, true)
     val input = Allocation.createFromBitmap(rs, newImage)
     val output: Allocation = Allocation.createTyped(rs, input.type)
     val script = ScriptIntrinsicColorMatrix.create(rs, Element.U8_4(rs))

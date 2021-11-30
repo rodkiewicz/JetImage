@@ -1,15 +1,16 @@
 package pl.mrodkiewicz.imageeditor.ui.editorscreen
 
 import android.graphics.Bitmap
-import androidx.compose.animation.DpPropKey
-import androidx.compose.animation.core.transitionDefinition
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.transition
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRowForIndexed
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pl.mrodkiewicz.imageeditor.data.LutFilter
 
-private val height = DpPropKey("height")
 
 enum class TabsState { FILTERS, ADJUST }
 
@@ -39,46 +39,28 @@ fun BottomActionBar(
     onFilterSelected: (Int, LutFilter) -> Unit,
 ) {
     val (currentTab, setCurrentTab) = remember { mutableStateOf(0) }
-    val animation = remember {
-        transitionDefinition<TabsState> {
-            state(TabsState.FILTERS) {
-                this[height] = 100.dp // todo this shouldn't be fixed value
-            }
-            state(TabsState.ADJUST) {
-                this[height] = 45.dp
-            }
-            transition(TabsState.FILTERS to TabsState.FILTERS) {
-                height using tween(
-                    durationMillis = 500
-                )
-            }
-            transition(TabsState.FILTERS to TabsState.FILTERS) {
-                height using tween(
-                    durationMillis = 500
-                )
-            }
-
-        }
+    val transitionState = remember{ MutableTransitionState(TabsState.FILTERS) }
+    val transition = updateTransition(transitionState)
+    val height = transition.animateDp(transitionSpec = { tween(durationMillis = 300) }) {
+        if (it == TabsState.FILTERS) 100.dp else 45.dp
     }
-    val animationState = transition(
-        definition = animation,
-        toState = when (currentTab) {
-            0 -> TabsState.FILTERS
-            else -> TabsState.ADJUST
-        },
-    )
+
+
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Bottom) {
-        Box(modifier = Modifier.height(animationState[height])) {
+        Box(modifier = Modifier.height(height.value)) {
             when (currentTab) {
                 0 -> {
-                    LazyRowForIndexed(items = lutFilters) { index, item ->
-                        item.thumbnail?.let { it1 ->
-                            LutFilterItem(item.name, it1, index == activeFilter) {
-                                onFilterSelected.invoke(
-                                    index,
-                                    item
-                                )
-                            }
+                    LazyRow{
+                        itemsIndexed(lutFilters) {
+                            index, item ->
+                                item.thumbnail?.let { it1 ->
+                                    LutFilterItem(item.name, it1, index == activeFilter) {
+                                        onFilterSelected.invoke(
+                                            index,
+                                            item
+                                        )
+                                    }
+                                }
                         }
                     }
 
@@ -104,7 +86,8 @@ fun BottomActionBar(
 fun LutFilterItem(name: String, image: Bitmap, isActive: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (isActive) Color.Black else Color(17, 17, 17)
     Column(
-        modifier = Modifier.clickable(onClick = { onClick.invoke() }, indication = null)
+        modifier = Modifier
+            .clickable(onClick = { onClick.invoke() })
             .background(backgroundColor)
             .padding(8.dp, 8.dp),
         verticalArrangement = Arrangement.Center,
@@ -112,7 +95,10 @@ fun LutFilterItem(name: String, image: Bitmap, isActive: Boolean, onClick: () ->
     ) {
         Image(
             bitmap = image.asImageBitmap(),
-            Modifier.size(48.dp).clip(CircleShape),
+            "",
+            Modifier
+                .size(48.dp)
+                .clip(CircleShape),
             contentScale = ContentScale.FillBounds
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -145,7 +131,9 @@ fun BottomTabs(tabs: Array<TabsState>, currentTab: Int = 0, onTabChange: (Int) -
     ) {
         tabs.forEachIndexed { index, item ->
             Box(
-                Modifier.clickable(onClick = { onTabChange.invoke(index) }).weight(weight)
+                Modifier
+                    .clickable(onClick = { onTabChange.invoke(index) })
+                    .weight(weight)
                     .height(48.dp),
                 contentAlignment = Alignment.Center
             ) {

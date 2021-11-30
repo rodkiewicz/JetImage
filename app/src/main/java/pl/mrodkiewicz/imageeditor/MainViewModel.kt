@@ -3,9 +3,10 @@ package pl.mrodkiewicz.imageeditor
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.hilt.lifecycle.ViewModelInject
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -20,11 +21,13 @@ import pl.mrodkiewicz.imageeditor.data.default_lut_filters
 import pl.mrodkiewicz.imageeditor.di.MainImageProcessor
 import pl.mrodkiewicz.imageeditor.processor.ImageProcessor
 import pl.mrodkiewicz.imageeditor.processor.ImageProcessorManager
+import javax.inject.Inject
 
-
-class MainViewModel @ViewModelInject constructor(
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     @ApplicationContext val context: Context,
-    @MainImageProcessor private val imageProcessor: ImageProcessor
+    @MainImageProcessor private val imageProcessor: ImageProcessor,
 ) : ViewModel() {
     // UI State
     private val _bitmap = MutableStateFlow<Bitmap?>(null)
@@ -47,7 +50,7 @@ class MainViewModel @ViewModelInject constructor(
         viewModelScope.launch(Dispatchers.Default) {
 
             adjustFilterPipeline.onEach { _filters.value = it.first }.debounce(25L).collect {
-                imageProcessorManager.processAdjustFilter(it)
+                imageProcessor.processAdjustFilter(it)
 
             }
         }
@@ -93,8 +96,8 @@ class MainViewModel @ViewModelInject constructor(
     fun setBitmapUri(uri: Uri) {
         viewModelScope.launch {
 
-            imageProcessorManager.cleanup()
-            imageProcessorManager.setBitmapUri(uri)
+            imageProcessor.cleanup()
+            imageProcessor.setBitmapUri(uri)
 
             // reset lut filter
 
@@ -123,8 +126,7 @@ class MainViewModel @ViewModelInject constructor(
     }
 
     override fun onCleared() {
-
-        imageProcessorManager.cleanup()
+        imageProcessor.cleanup()
         super.onCleared()
 
     }

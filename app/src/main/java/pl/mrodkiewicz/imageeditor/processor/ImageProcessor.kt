@@ -14,7 +14,6 @@ import pl.mrodkiewicz.imageeditor.data.FilterType
 import pl.mrodkiewicz.imageeditor.data.LutFilter
 import pl.mrodkiewicz.imageeditor.helpers.convertToLutFilter
 import pl.mrodkiewicz.imageeditor.helpers.loadBitmap
-import pl.mrodkiewicz.imageeditor.helpers.saveImage
 import timber.log.Timber
 import java.util.*
 

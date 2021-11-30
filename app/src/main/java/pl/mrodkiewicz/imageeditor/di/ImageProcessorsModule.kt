@@ -5,8 +5,9 @@ import androidx.renderscript.RenderScript
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import pl.mrodkiewicz.imageeditor.processor.*
 import javax.inject.Qualifier
 
@@ -15,7 +16,7 @@ import javax.inject.Qualifier
 annotation class MainImageProcessor
 
 @Module
-@InstallIn(ApplicationComponent::class)
+@InstallIn(ViewModelComponent::class)
 class ImageProcessorsModule {
 
 

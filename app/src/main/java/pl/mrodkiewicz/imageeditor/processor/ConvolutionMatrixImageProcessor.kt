@@ -15,7 +15,7 @@ class ConvolutionMatrixImageProcessor(
 }
 
 fun Bitmap.applyConvolution(rs: RenderScript, adjustFilter: AdjustFilter): Bitmap {
-    val newImage = this.copy(Bitmap.Config.ARGB_8888, true)
+    val newImage = this.copy(this.config, true)
     val input = Allocation.createFromBitmap(rs, newImage)
     val output: Allocation = Allocation.createTyped(rs, input.type)
     var script: ScriptIntrinsic? = null

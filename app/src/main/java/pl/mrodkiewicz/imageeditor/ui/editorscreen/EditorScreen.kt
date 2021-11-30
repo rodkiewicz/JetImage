@@ -16,10 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.WithConstraints
-import androidx.compose.ui.platform.AmbientAnimationClock
-import androidx.compose.ui.platform.AmbientContext
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
@@ -33,7 +33,7 @@ import pl.mrodkiewicz.imageeditor.ui.actionBarTextStyle
 @ExperimentalComposeApi
 @Composable
 fun EditorScreen(writePermissionState: PermissionState, mainViewModel: MainViewModel) {
-    val context = AmbientContext.current
+    val context = LocalContext.current
     Column {
         Surface(
             Modifier.fillMaxWidth().height(56.dp).background(MaterialTheme.colors.primary)
@@ -64,7 +64,8 @@ fun EditorScreen(writePermissionState: PermissionState, mainViewModel: MainViewM
                             }
                         }) {
                             Image(
-                                imageVector = vectorResource(R.drawable.ic_baseline_done_24),
+                                painter = painterResource(R.drawable.ic_baseline_done_24),
+                                "",
                                 colorFilter = ColorFilter.tint(Color(235, 183, 22)),
                                 modifier = Modifier.width(24.dp).height(24.dp)
                             )
@@ -73,7 +74,8 @@ fun EditorScreen(writePermissionState: PermissionState, mainViewModel: MainViewM
                         writePermissionState.launchPermissionRequest()
                     }) {
                         Image(
-                            imageVector = vectorResource(R.drawable.ic_baseline_done_24),
+                            painter = painterResource(R.drawable.ic_baseline_done_24),
+                            "",
                             colorFilter = ColorFilter.tint(Color(150, 150, 150)),
                             modifier = Modifier.width(24.dp).height(24.dp)
                         )
@@ -89,8 +91,8 @@ fun EditorScreen(writePermissionState: PermissionState, mainViewModel: MainViewM
 
 @Composable
 fun EditorView(mainViewModel: MainViewModel) {
-    val clock = AmbientAnimationClock.current
-    val pagerState = remember(clock) { EditorPagerState(clock) }
+    val coroutineScope = rememberCoroutineScope()
+//    val pagerState = remember { EditorPagerState() }
     val filters = mainViewModel.filters.collectAsState()
     val bitmap = mainViewModel.bitmap.collectAsState()
     val lutFilters = mainViewModel.lut.collectAsState()
@@ -102,13 +104,13 @@ fun EditorView(mainViewModel: MainViewModel) {
             Surface(Modifier.fillMaxHeight().fillMaxWidth()) {
                 ImagePreview(mainViewModel, bitmap.value)
             }
-            FilterControl(
-                mainViewModel = mainViewModel,
-                items = filters.value,
-                visible = visible,
-                pagerState = pagerState,
-                modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight()
-            )
+//            FilterControl(
+//                mainViewModel = mainViewModel,
+//                items = filters.value,
+//                visible = visible,
+//                pagerState = pagerState,
+//                modifier = Modifier.padding(top = 16.dp).fillMaxWidth().fillMaxHeight()
+//            )
 
         }
         BottomActionBar(
@@ -128,11 +130,12 @@ fun EditorView(mainViewModel: MainViewModel) {
 
 @Composable
 fun ImagePreview(mainViewModel: MainViewModel, bitmap: Bitmap?) {
-    WithConstraints {
+    BoxWithConstraints {
         mainViewModel.setWidth(width = constraints.maxWidth)
         bitmap?.let {
             Image(
                 it.asImageBitmap(),
+                "",
                 modifier = Modifier.fillMaxWidth(),
                 contentScale = ContentScale.Fit
             )
@@ -150,35 +153,35 @@ fun ImagePreview(mainViewModel: MainViewModel, bitmap: Bitmap?) {
     }
 
 }
-
-@Composable
-fun FilterControl(
-    modifier: Modifier = Modifier,
-    mainViewModel: MainViewModel,
-    items: List<AdjustFilter>,
-    visible: Boolean = false,
-    pagerState: EditorPagerState = run {
-        val clock = AmbientAnimationClock.current
-        remember(clock) { EditorPagerState(clock) }
-    }
-) {
-    if (items.isNotEmpty()) {
-        pagerState.maxPage = (items.size - 1).coerceAtLeast(0)
-        EditorPager(
-            state = pagerState,
-            modifier = modifier,
-            visible = visible,
-            onValueChange = { index, value ->
-                mainViewModel.updateAdjustFilter(index, (value).toInt())
-            },
-        ) {
-            EditorPagerItem(
-                adjustFilter = items[page],
-                modifier = Modifier.padding(4.dp).fillMaxHeight().scalePagerItems()
-            )
-        }
-    }
-}
+//
+//@Composable
+//fun FilterControl(
+//    modifier: Modifier = Modifier,
+//    mainViewModel: MainViewModel,
+//    items: List<AdjustFilter>,
+//    visible: Boolean = false,
+//    pagerState: EditorPagerState = run {
+//        val clock = AmbientAnimationClock.current
+//        remember(clock) { EditorPagerState(clock) }
+//    }
+//) {
+//    if (items.isNotEmpty()) {
+//        pagerState.maxPage = (items.size - 1).coerceAtLeast(0)
+//        EditorPager(
+//            state = pagerState,
+//            modifier = modifier,
+//            visible = visible,
+//            onValueChange = { index, value ->
+//                mainViewModel.updateAdjustFilter(index, (value).toInt())
+//            },
+//        ) {
+//            EditorPagerItem(
+//                adjustFilter = items[page],
+//                modifier = Modifier.padding(4.dp).fillMaxHeight().scalePagerItems()
+//            )
+//        }
+//    }
+//}
 
 @Composable
 private fun EditorPagerItem(adjustFilter: AdjustFilter, modifier: Modifier = Modifier) {
@@ -189,7 +192,8 @@ private fun EditorPagerItem(adjustFilter: AdjustFilter, modifier: Modifier = Mod
         ) {
             Row(Modifier.align(Alignment.CenterHorizontally).padding(8.dp)) {
                 Image(
-                    imageVector = vectorResource(adjustFilter.icon),
+                    painter = painterResource(adjustFilter.icon),
+                    "",
                     colorFilter = ColorFilter.tint(adjustFilter.customColor),
                     modifier = Modifier.width(48.dp).height(48.dp)
                         .absolutePadding(right = 12.dp)

@@ -4,7 +4,6 @@ package pl.mrodkiewicz.imageeditor.ui.editorscreen
 
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -23,10 +22,10 @@ import kotlinx.coroutines.flow.filterNotNull
 
 
 class PermissionState(
-        private val permission: String,
-        val hasPermission: Flow<Boolean>,
-        val shouldShowRationale: Flow<Boolean>,
-        private val launcher: ActivityResultLauncher<String>
+    private val permission: String,
+    val hasPermission: Flow<Boolean>,
+    val shouldShowRationale: Flow<Boolean>,
+    private val launcher: ActivityResultLauncher<String>
 ) {
     fun launchPermissionRequest() = launcher.launch(permission)
 }
@@ -39,7 +38,7 @@ private class PermissionResultCall(
 ) {
 
     // defer this to allow construction before onCreate
-    private val hasPermission =  MutableStateFlow<Boolean?>(null)
+    private val hasPermission = MutableStateFlow<Boolean?>(null)
     private val showRationale = MutableStateFlow<Boolean?>(null)
 
     // Don't do this in onCreate because compose setContent may be called in Activity usage before
@@ -88,10 +87,10 @@ private class PermissionResultCall(
 }
 
 
-
 /**
  * Instantiate and manage it in composition like this
  */
+@InternalComposeApi
 @ExperimentalComposeApi
 @ExperimentalCoroutinesApi
 @Composable
@@ -99,12 +98,12 @@ fun checkSelfPermissionState(
     activity: AppCompatActivity,
     permission: String
 ): PermissionState {
-    val key = currentComposer.currentCompoundKeyHash.toString()
+    val key = currentComposer.compoundKeyHash.toString()
     val call = remember(activity, permission) {
         PermissionResultCall(key, activity, permission)
     }
     // drive initialCheck and unregister from composition lifecycle
-    onCommit(call) {
+    DisposableEffect(call) {
         call.initialCheck()
         onDispose {
             call.unregister()
@@ -117,9 +116,9 @@ fun checkSelfPermissionState(
 @ExperimentalCoroutinesApi
 @Composable
 fun NeedsPermission(
-        writePermission: PermissionState,
-        hasPermissionContent: @Composable (() -> Unit),
-        noPermissionContent: @Composable (() -> Unit),
+    writePermission: PermissionState,
+    hasPermissionContent: @Composable (() -> Unit),
+    noPermissionContent: @Composable (() -> Unit),
 ) {
 
     val hasLocationPermission = writePermission.hasPermission.collectAsState(false).value
